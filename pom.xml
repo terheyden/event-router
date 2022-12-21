@@ -5,7 +5,7 @@
     <groupId>com.terheyden</groupId>
     <artifactId>event-router</artifactId>
     <name>event-router</name>
-    <version>0.0.1</version> <!-- here -->
+    <version>0.0.2-SNAPSHOT</version> <!-- here -->
     <description>Java Event Router</description>
     <url>https://github.com/terheyden/event-router</url>
 
