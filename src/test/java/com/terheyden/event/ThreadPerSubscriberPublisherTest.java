@@ -14,9 +14,8 @@ public class ThreadPerSubscriberPublisherTest extends BaseThreadPoolTest {
     @Override
     protected EventRouter createEventRouter() {
 
-        return EventRouter.builder()
-            .eventPublisher(new ThreadPerSubscriberPublisher(THREADS))
-            .build();
+        return new EventRouter(new EventRouterConfig()
+            .eventPublisher(new ThreadPerSubscriberPublisher(THREADS)));
     }
 
     @Test

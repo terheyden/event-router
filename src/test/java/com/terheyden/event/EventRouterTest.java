@@ -24,7 +24,7 @@ public class EventRouterTest {
 
     @BeforeEach
     public void beforeEach() {
-        router = EventRouter.builder().build();
+        router = new EventRouter();
     }
 
     @Test

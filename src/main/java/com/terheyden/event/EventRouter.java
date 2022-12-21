@@ -44,17 +44,17 @@ public class EventRouter {
     private final EventPublisher eventPublisher;
 
     /**
-     * Use {@link EventRouterBuilder}.
+     * Create a new event router with the settings provided in the config object.
      */
-    /*package*/ EventRouter(EventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
+    public EventRouter(EventRouterConfig config) {
+        this.eventPublisher = config.eventPublisher();
     }
 
     /**
-     * Begin building a new {@link EventRouter}.
+     * Uses default config with direct publishing (uses calling thread) to create a new event router.
      */
-    public static EventRouterBuilder builder() {
-        return new EventRouterBuilder();
+    public EventRouter() {
+        this(new EventRouterConfig());
     }
 
     /**
