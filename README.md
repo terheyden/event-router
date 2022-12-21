@@ -1,6 +1,6 @@
 # EventRouter
 
-_Messaging event router (event bus) for Java._
+_Simple, fast, flexible event router / event bus for Java._
 
 ## What is it?
 Coordinating components and services via events, also known as
@@ -36,6 +36,12 @@ and the cornerstone of cloud computing.
   * No reflection, no classpath scanning, and less source code clutter
   * Subscribers can self-register during construction
   * Subscriptions are simply lambda functions (closures)
+
+* JDK 1.8+ compatible
+  * If you're stuck using JDK 1.8, we've got you covered
+
+## TODO
+More stuff goes here.
 
 ## Exception handling
 If an exception is thrown while an event is being handled by a subscriber,
