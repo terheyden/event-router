@@ -96,10 +96,31 @@ public abstract class BaseThreadPoolTest {
     /**
      * Simple fruit record.
      */
-    public record Fruit(String name) { }
+    private static final class Fruit {
+
+        private final String name;
+
+        public Fruit(String name) {
+            this.name = name;
+        }
+
+        public String name() {
+            return name;
+        }
+    }
 
     /**
      * Simple vegetable record.
      */
-    public record Vegetable(String name) { }
+    private static final class Vegetable {
+        private final String name;
+
+        public Vegetable(String name) {
+            this.name = name;
+        }
+
+        public String name() {
+            return name;
+        }
+    }
 }

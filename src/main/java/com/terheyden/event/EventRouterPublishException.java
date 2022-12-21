@@ -1,13 +1,10 @@
 package com.terheyden.event;
 
-import java.io.Serial;
-
 /**
  * EventRouterPublishException class.
  */
 public class EventRouterPublishException extends RuntimeException {
 
-    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

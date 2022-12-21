@@ -168,5 +168,22 @@ public class EventRouter {
     /**
      * Combines an event with its class type, for queuing and delivery.
      */
-    private record EventRequest(Object event, Class<?> eventClass) { }
+    private static class EventRequest {
+
+        private final Object event;
+        private final Class<?> eventClass;
+
+        public EventRequest(Object event, Class<?> eventClass) {
+            this.event = event;
+            this.eventClass = eventClass;
+        }
+
+        public Object event() {
+            return event;
+        }
+
+        public Class<?> eventClass() {
+            return eventClass;
+        }
+    }
 }

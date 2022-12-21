@@ -7,12 +7,12 @@
     <name>event-router</name>
     <version>0.0.1-SNAPSHOT</version>
     <description>Java Event Router</description>
-    <url>http://github.com/terheyden/event-router</url>
+    <url>https://github.com/terheyden/event-router</url>
 
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
 
@@ -30,9 +30,9 @@
     </scm>
 
     <properties>
-        <java.version>17</java.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <java.version>1.8</java.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit-jupiter.version>5.9.1</junit-jupiter.version> <!-- org/junit/jupiter/junit-jupiter-api -->
         <mockito.version>4.10.0</mockito.version> <!-- org/mockito/mockito-core -->
