@@ -7,11 +7,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import io.vavr.CheckedFunction1;
+
 /**
  * A map of event class types to their subscriptions.
  * E.g. {@code Map<K, List<EventSubscription>>}.
  */
-public class EventSubscriberMap {
+/*package*/ class EventSubscriberMap {
 
     /**
      * Map of {@code [ event : [ sub1, sub2, ... ] ]}.
@@ -19,33 +21,25 @@ public class EventSubscriberMap {
      * or a UUID for short-lived, publishAndReturn events.
      * (Or really any object that can be used as a key in a map.)
      */
-    private final Map<EventKey, Queue<EventSubscription>> eventMap = new ConcurrentHashMap<>();
+    private final Map<Object, Queue<EventSubscription>> eventMap = new ConcurrentHashMap<>();
 
-    public void add(SubscribeRequest subscribeRequest) {
+    public UUID add(Object uuidClassKey, CheckedFunction1<Object, Object> eventHandler) {
 
-        EventSubscription subscription = EventSubscription.createNew(
-            subscribeRequest.subscriptionId(),
-            subscribeRequest.eventHandler());
+        EventSubscription subscription = EventSubscription.createNew(eventHandler);
 
         // We don't want subscriptions changing while we're iterating over them.
-        // So we want to use a Concurrent- collection.
+        // So we want to use a concurrent collection here.
         eventMap
-            .computeIfAbsent(subscribeRequest.eventKey(), clazz -> new ConcurrentLinkedQueue<>())
+            .computeIfAbsent(uuidClassKey, clazz -> new ConcurrentLinkedQueue<>())
             .add(subscription);
+
+        return subscription.getSubscriptionId();
     }
 
-    public boolean remove(UnsubscribeRequest unsubscribeRequest) {
+    /*package*/ boolean remove(Object uuidClassKey, UUID subscriptionId) {
 
-        EventKey key = unsubscribeRequest.eventKey();
-        Queue<EventSubscription> subscriptions = eventMap.get(key);
-        if (subscriptions == null) {
-            return false;
-        }
-
-        // We could've hashed by UUID, but what if there was a collision in one map
-        // and not the other ... it's best to use a single collection / source of truth.
-        UUID removeId = unsubscribeRequest.subscriptionId();
-        return subscriptions.removeIf(subscription -> subscription.getSubscriptionId().equals(removeId));
+        return find(uuidClassKey)
+            .removeIf(subscription -> subscription.getSubscriptionId().equals(subscriptionId));
     }
 
     /**
@@ -55,7 +49,7 @@ public class EventSubscriberMap {
      *         so it won't throw a {@link ConcurrentModificationException}, but the size
      *         may be off if the queue is being modified at the same time.
      */
-    public Queue<EventSubscription> find(EventKey uuidClass) {
-        return eventMap.getOrDefault(uuidClass, EmptyQueue.instance());
+    public Queue<EventSubscription> find(Object uuidClassKey) {
+        return eventMap.getOrDefault(uuidClassKey, EmptyQueue.instance());
     }
 }

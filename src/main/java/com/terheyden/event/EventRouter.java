@@ -1,10 +1,10 @@
 package com.terheyden.event;
 
-import java.util.ArrayDeque;
-import java.util.List;
+import javax.annotation.Nullable;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Semaphore;
 
 import org.slf4j.Logger;
 
@@ -28,24 +28,22 @@ public class EventRouter {
     private final EventSubscriberMap eventSubscriberMap = new EventSubscriberMap();
 
     /**
-     * Thread-safe queue of events waiting to be delivered.
-     */
-    private final Queue<EventRequest> eventDeliveryQueue = new ArrayDeque<>();
-
-    private final Queue<SubscribeRequest> subscribeQueue = new ArrayDeque<>();
-    private final Queue<UnsubscribeRequest> unsubscribeQueue = new ArrayDeque<>();
-
-    /**
-     * Flag so new events can't interrupt current ones.
-     * E.g. processing event A calls publish(event B), which should be queued.
-     */
-    private final AtomicBoolean isPublishing = new AtomicBoolean(false);
-
-    /**
      * Defines the publish strategy.
      * Are messages sent directly (on the calling thread), multi-thread, in-order, etc.
      */
     private final EventPublisher eventPublisher;
+
+    /**
+     * Events should be processed in-order. If publishing one event causes another,
+     * at least wait until the current event is finished.
+     */
+    private final Queue<PublishRequest> publishRequests = new ConcurrentLinkedQueue<>();
+
+    /**
+     * Publish requests should finish in-order.
+     * To enforce this, we use a lock.
+     */
+    private final Semaphore publishLock = new Semaphore(1);
 
     /**
      * Create a new event router with the settings provided in the config object.
@@ -62,20 +60,18 @@ public class EventRouter {
     }
 
     /**
-     * When an event of type {@code uuidClass} is published, {@code eventHandler} will be called.
+     * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
      *
      * @param eventClass Events are defined by their class type.
      *                   This is the type of event that the handler will be subscribed to.
      * @return A UUID that can later be used to unsubscribe.
      */
     public <T> UUID subscribe(Class<T> eventClass, CheckedConsumer<T> eventHandler) {
-        // First just add the request to the queue.
-        EventKey eventKey = new EventKey(eventClass);
-        SubscribeRequest request = new SubscribeRequest(eventKey, eventHandler);
-        subscribeQueue.add(request);
-        // Then poke the job handler.
-        deliverEvents();
-        return request.subscriptionId();
+        // Concurrent, so we don't need to synchronize.
+        // subscribe() expectes a consumer, but we store it as a function.
+        CheckedConsumer handler = eventHandler;
+        ConsumerFunction1<Object, Object> eventFunc = new ConsumerFunction1<Object, Object>(handler);
+        return eventSubscriberMap.add(eventClass, eventFunc);
     }
 
     /**
@@ -84,14 +80,11 @@ public class EventRouter {
      * @param eventClass Events are defined by their class type.
      *                   This is the type of event that the handler was subscribed to.
      * @param subscriptionId The UUID returned by the subscribe() method.
+     * @return True if the subscription was found and removed.
      */
-    public <T> void unsubscribe(Class<T> eventClass, UUID subscriptionId) {
-        // First just add the request to the queue.
-        EventKey eventKey = new EventKey(eventClass);
-        UnsubscribeRequest request = new UnsubscribeRequest(eventKey, subscriptionId);
-        unsubscribeQueue.add(request);
-        // Then poke the job handler.
-        deliverEvents();
+    public <T> boolean unsubscribe(Class<T> eventClass, UUID subscriptionId) {
+        // Concurrent, so we don't need to synchronize.
+        return eventSubscriberMap.remove(eventClass, subscriptionId);
     }
 
     /**
@@ -103,15 +96,7 @@ public class EventRouter {
      *                   is a subclass of the subscribed event class type.
      */
     public void publish(Object event, Class<?> eventClass) {
-        try {
-            // First just add the event to the delivery queue.
-            eventDeliveryQueue.add(new EventRequest(event, eventClass));
-            // Then run the event deliverer.
-            deliverEvents();
-
-        } catch (Exception e) {
-            EventUtils.throwUnchecked(e);
-        }
+        publishInternal(event, eventClass);
     }
 
     /**
@@ -121,78 +106,90 @@ public class EventRouter {
      * @param event The event to publish.
      */
     public void publish(Object event) {
-        publish(event, event.getClass());
+        publishInternal(event, event.getClass());
     }
 
     /**
-     * Will begin delivering events to publishers if there are events in the queue,
-     * and we are not already doing so.
-     * <p>
-     * If e.g. delivering event A has caused event B to be published, then event B will be
-     * added to the queue and this method will be called again, but will short-circuit.
+     * Internal publish that works with UUIDs.
      */
-    private void deliverEvents() {
+    /*package*/ void publishInternal(Object event, Object uuidClass) {
+        // First, put the event on the queue.
+        publishRequests.add(new PublishRequest(event, uuidClass));
+        // Then, process the queue.
+        processAllPublishRequests();
+    }
 
-        // If we're already delivering events, don't interrupt.
-        boolean canLockPublisher = isPublishing.compareAndSet(false, true);
-        if (!canLockPublisher) {
-            LOG.debug("Event delivery already in-progress, skipping.");
+    /**
+     * Take from the publish request queue and deliver to subscribers
+     * until the queue is empty again.
+     */
+    private void processAllPublishRequests() {
+
+        // If someone's already processing the queue, don't do it again.
+        // This prevents the same thread from being interrupted by a second publish.
+        if (!publishLock.tryAcquire()) {
             return;
         }
 
-        // This try..finally is to make sure we unlock the publisher at the very end.
+        // Put everything in a try so we can guarantee the lock will be released.
         try {
-            // poll() will return null if the queue is empty.
-            SubscribeRequest subscribeRequest = subscribeQueue.poll();
-            while (subscribeRequest != null) {
-                eventSubscriberMap.add(subscribeRequest);
-                subscribeRequest = subscribeQueue.poll();
-            }
 
-            UnsubscribeRequest unsubscribeRequest = unsubscribeQueue.poll();
-            while (unsubscribeRequest != null) {
-                eventSubscriberMap.remove(unsubscribeRequest);
-                unsubscribeRequest = unsubscribeQueue.poll();
-            }
+            @Nullable PublishRequest publishRequest = publishRequests.poll();
 
-            EventRequest eventReq = eventDeliveryQueue.poll();
-            LOG.debug("Starting event delivery.");
+            while (publishRequest != null) {
 
-            while (eventReq != null) {
-                publishEventRequest(eventReq);
-                eventReq = eventDeliveryQueue.poll();
+                processPublishRequest(publishRequest);
+                // Get the next event.
+                publishRequest = publishRequests.poll();
             }
 
         } finally {
-            LOG.debug("Event delivery finished.");
-            isPublishing.set(false);
+            publishLock.release();
         }
     }
 
     /**
-     * Publish a single vetted event request.
+     * Deliver the given publish request to subscribers.
      */
-    private void publishEventRequest(EventRequest eventReq) {
+    private void processPublishRequest(PublishRequest publishRequest) {
 
-        Object event = eventReq.event();
-        Object uuidClass = eventReq.uuidClass();
-        List<EventSubscription> subscribers = eventSubscriberMap.find(uuidClass);
+        Object event = publishRequest.event();
+        Object eventKey = publishRequest.eventKey();
+        Queue<EventSubscription> subscribers = eventSubscriberMap.find(eventKey);
 
-        if (subscribers.size() > 0) {
-            try {
-
-                LOG.debug(
-                    "Publishing event type '{}' to {} subscribers.",
-                    uuidClass.toString(),
-                    subscribers.size());
-
-                // TODO: What if a sub unsubscribes in the middle of this?
-                eventPublisher.publish(this, event, subscribers);
-
-            } catch (Exception e) {
-                // Publishers are expected to deal with exceptions.
-                throw new IllegalStateException("EventPublisher threw an exception.", e);
-            }
+        if (subscribers.isEmpty()) {
+            handleNoSubscribersEvent(event, eventKey);
+            return;
         }
+
+        LOG.debug(
+            "Publishing event type '{}' to {} subscribers.",
+            eventKey.toString(),
+            subscribers.size());
+
+        eventPublisher.publish(this, event, subscribers);
+    }
+
+    /**
+     * If it's a user event with no subscribers, send a {@link NoSubscribersEvent}.
+     */
+    private void handleNoSubscribersEvent(Object event, Object eventKey) {
+
+        // If it's not a class, it's an internal event.
+        if (!(eventKey instanceof Class)) {
+            return;
+        }
+
+        Class<?> eventClassKey = (Class<?>) eventKey;
+        // https://stackoverflow.com/questions/12145185/determine-if-a-class-implements-a-interface-in-java
+        boolean internalEvent = SpecialEvent.class.isAssignableFrom(eventClassKey);
+
+        if (internalEvent) {
+            // Avoid infinite loop.
+            return;
+        }
+
+        LOG.debug("No subscribers for event: {}", event);
+        publish(new NoSubscribersEvent(event, eventClassKey));
     }
 }

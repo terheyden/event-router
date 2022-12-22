@@ -1,5 +1,6 @@
 package com.terheyden.event;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -10,7 +11,7 @@ import java.util.concurrent.TimeUnit;
  * This layer's whole job is just to configure the threadpool for subclasses.
  * This layer simply provides: {@link #execute(Runnable)}
  */
-public abstract class BaseThreadPoolPublisher extends BasePublisher {
+public abstract class BaseThreadPoolPublisher implements EventPublisher {
 
     private final ExecutorService threadPool;
 
@@ -56,5 +57,12 @@ public abstract class BaseThreadPoolPublisher extends BasePublisher {
      */
     protected void execute(Runnable task) {
         threadPool.execute(task);
+    }
+
+    protected CompletableFuture<Object> executeAndReturn(Runnable task) {
+        return CompletableFuture.supplyAsync(() -> {
+            task.run();
+            return null;
+        }, threadPool);
     }
 }

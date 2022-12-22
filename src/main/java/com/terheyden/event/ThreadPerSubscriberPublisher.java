@@ -1,6 +1,7 @@
 package com.terheyden.event;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -17,10 +18,21 @@ public class ThreadPerSubscriberPublisher extends BaseThreadPoolPublisher {
     }
 
     @Override
-    public void publish(EventRouter sourceRouter, Object event, List<EventSubscription> subscribers) {
+    public void publish(EventRouter sourceRouter, Object event, Collection<EventSubscription> subscribers) {
         // No ordering required, every subscriber gets notified at once.
-        for (EventSubscription subscriber : subscribers) {
-            execute(() -> publishChecked(sourceRouter, subscriber, event));
-        }
+        subscribers.forEach(sub -> execute(() -> sub.getEventHandler().unchecked().apply(event)));
+    }
+
+    @Override
+    public void query(
+        EventRouter sourceRouter,
+        Object event,
+        Collection<EventSubscription> subscribers,
+        UUID callbackEventKey) {
+
+        subscribers.forEach(sub -> execute(() -> {
+            Object result = sub.getEventHandler().unchecked().apply(event);
+            sourceRouter.publishInternal(result, callbackEventKey);
+        }));
     }
 }

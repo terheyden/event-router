@@ -1,6 +1,7 @@
 package com.terheyden.event;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.UUID;
 
 /**
  * Strategies for delivering events.
@@ -21,7 +22,14 @@ public interface EventPublisher {
      *
      * @param sourceRouter The router that made the publish request.
      * @param event The event to deliver to each {@link EventSubscription}.
-     * @param subscribers The list of subscribers to deliver the event to. Guaranteed to be non-empty.
+     * @param subscribers The concurrent collection of subscribers to deliver the event to, guaranteed to be non-empty.
      */
-    void publish(EventRouter sourceRouter, Object event, List<EventSubscription> subscribers);
+    void publish(EventRouter sourceRouter, Object event, Collection<EventSubscription> subscribers);
+
+    void query(
+        EventRouter sourceRouter,
+        Object event,
+        Collection<EventSubscription> subscribers,
+        UUID callbackEventKey);
+
 }

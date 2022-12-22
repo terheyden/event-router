@@ -2,7 +2,7 @@ package com.terheyden.event;
 
 import java.util.UUID;
 
-import io.vavr.CheckedConsumer;
+import io.vavr.CheckedFunction1;
 
 /**
  * EventSubscription class.
@@ -10,31 +10,25 @@ import io.vavr.CheckedConsumer;
 public final class EventSubscription {
 
     private final UUID subscriptionId;
-    private final CheckedConsumer<Object> eventHandler;
+    private final CheckedFunction1<Object, Object> eventHandler;
 
     private EventSubscription(
         UUID subscriptionId,
-        CheckedConsumer<?> eventHandler) {
+        CheckedFunction1<Object, Object> eventHandler) {
 
         this.subscriptionId = subscriptionId;
-        this.eventHandler = recastConsumer(eventHandler);
+        this.eventHandler = eventHandler;
     }
 
-    public static EventSubscription createNew(UUID subscriptionId, CheckedConsumer<?> eventHandler) {
-        return new EventSubscription(subscriptionId, eventHandler);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CheckedConsumer<Object> recastConsumer(CheckedConsumer<?> eventHandler) {
-        CheckedConsumer rawConsumer = eventHandler;
-        return (CheckedConsumer<Object>) rawConsumer;
+    public static EventSubscription createNew(CheckedFunction1<Object, Object> eventHandler) {
+        return new EventSubscription(UUID.randomUUID(), eventHandler);
     }
 
     public UUID getSubscriptionId() {
         return subscriptionId;
     }
 
-    public CheckedConsumer<Object> getEventHandler() {
+    public CheckedFunction1<Object, Object> getEventHandler() {
         return eventHandler;
     }
 }
