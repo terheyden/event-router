@@ -6,7 +6,7 @@
     <artifactId>event-router</artifactId>
     <name>event-router</name>
     <version>0.0.2-SNAPSHOT</version> <!-- here -->
-    <description>Java Event Router</description>
+    <description>Simple, fast, flexible event router / event bus for Java</description>
     <url>https://github.com/terheyden/event-router</url>
 
     <licenses>

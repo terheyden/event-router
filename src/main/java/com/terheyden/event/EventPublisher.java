@@ -24,5 +24,4 @@ public interface EventPublisher {
      * @param subscribers The list of subscribers to deliver the event to. Guaranteed to be non-empty.
      */
     void publish(EventRouter sourceRouter, Object event, List<EventSubscription> subscribers);
-
 }

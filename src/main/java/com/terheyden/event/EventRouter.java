@@ -1,9 +1,9 @@
 package com.terheyden.event;
 
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -23,13 +23,17 @@ public class EventRouter {
 
     /**
      * {@code [ Event.class : [ sub1, sub2, ... ] ]}.
+     * {@code [ UUID : [ sub ] ]}.
      */
     private final EventSubscriberMap eventSubscriberMap = new EventSubscriberMap();
 
     /**
      * Thread-safe queue of events waiting to be delivered.
      */
-    private final Queue<EventRequest> eventDeliveryQueue = new ConcurrentLinkedQueue<>();
+    private final Queue<EventRequest> eventDeliveryQueue = new ArrayDeque<>();
+
+    private final Queue<SubscribeRequest> subscribeQueue = new ArrayDeque<>();
+    private final Queue<UnsubscribeRequest> unsubscribeQueue = new ArrayDeque<>();
 
     /**
      * Flag so new events can't interrupt current ones.
@@ -58,14 +62,20 @@ public class EventRouter {
     }
 
     /**
-     * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
+     * When an event of type {@code uuidClass} is published, {@code eventHandler} will be called.
      *
      * @param eventClass Events are defined by their class type.
      *                   This is the type of event that the handler will be subscribed to.
      * @return A UUID that can later be used to unsubscribe.
      */
     public <T> UUID subscribe(Class<T> eventClass, CheckedConsumer<T> eventHandler) {
-        return eventSubscriberMap.add(eventClass, eventHandler);
+        // First just add the request to the queue.
+        EventKey eventKey = new EventKey(eventClass);
+        SubscribeRequest request = new SubscribeRequest(eventKey, eventHandler);
+        subscribeQueue.add(request);
+        // Then poke the job handler.
+        deliverEvents();
+        return request.subscriptionId();
     }
 
     /**
@@ -74,10 +84,14 @@ public class EventRouter {
      * @param eventClass Events are defined by their class type.
      *                   This is the type of event that the handler was subscribed to.
      * @param subscriptionId The UUID returned by the subscribe() method.
-     * @return True if the subscription was found and removed.
      */
-    public <T> boolean unsubscribe(Class<T> eventClass, UUID subscriptionId) {
-        return eventSubscriberMap.remove(eventClass, subscriptionId);
+    public <T> void unsubscribe(Class<T> eventClass, UUID subscriptionId) {
+        // First just add the request to the queue.
+        EventKey eventKey = new EventKey(eventClass);
+        UnsubscribeRequest request = new UnsubscribeRequest(eventKey, subscriptionId);
+        unsubscribeQueue.add(request);
+        // Then poke the job handler.
+        deliverEvents();
     }
 
     /**
@@ -92,7 +106,6 @@ public class EventRouter {
         try {
             // First just add the event to the delivery queue.
             eventDeliveryQueue.add(new EventRequest(event, eventClass));
-
             // Then run the event deliverer.
             deliverEvents();
 
@@ -130,32 +143,23 @@ public class EventRouter {
         // This try..finally is to make sure we unlock the publisher at the very end.
         try {
             // poll() will return null if the queue is empty.
+            SubscribeRequest subscribeRequest = subscribeQueue.poll();
+            while (subscribeRequest != null) {
+                eventSubscriberMap.add(subscribeRequest);
+                subscribeRequest = subscribeQueue.poll();
+            }
+
+            UnsubscribeRequest unsubscribeRequest = unsubscribeQueue.poll();
+            while (unsubscribeRequest != null) {
+                eventSubscriberMap.remove(unsubscribeRequest);
+                unsubscribeRequest = unsubscribeQueue.poll();
+            }
+
             EventRequest eventReq = eventDeliveryQueue.poll();
             LOG.debug("Starting event delivery.");
 
             while (eventReq != null) {
-
-                Object event = eventReq.event();
-                Class<?> eventClass = eventReq.eventClass();
-                List<EventSubscription> subscribers = eventSubscriberMap.find(eventClass);
-
-                if (subscribers.size() > 0) {
-                    try {
-
-                        LOG.debug(
-                            "Publishing event type '{}' to {} subscribers.",
-                            eventClass.getSimpleName(),
-                            subscribers.size());
-
-                        eventPublisher.publish(this, event, subscribers);
-
-                    } catch (Exception e) {
-                        // Publishers are expected to deal with exceptions.
-                        throw new IllegalStateException("EventPublisher threw an exception.", e);
-                    }
-                }
-
-                // Ready for the next event.
+                publishEventRequest(eventReq);
                 eventReq = eventDeliveryQueue.poll();
             }
 
@@ -166,24 +170,29 @@ public class EventRouter {
     }
 
     /**
-     * Combines an event with its class type, for queuing and delivery.
+     * Publish a single vetted event request.
      */
-    private static class EventRequest {
+    private void publishEventRequest(EventRequest eventReq) {
 
-        private final Object event;
-        private final Class<?> eventClass;
+        Object event = eventReq.event();
+        Object uuidClass = eventReq.uuidClass();
+        List<EventSubscription> subscribers = eventSubscriberMap.find(uuidClass);
 
-        public EventRequest(Object event, Class<?> eventClass) {
-            this.event = event;
-            this.eventClass = eventClass;
-        }
+        if (subscribers.size() > 0) {
+            try {
 
-        public Object event() {
-            return event;
-        }
+                LOG.debug(
+                    "Publishing event type '{}' to {} subscribers.",
+                    uuidClass.toString(),
+                    subscribers.size());
 
-        public Class<?> eventClass() {
-            return eventClass;
+                // TODO: What if a sub unsubscribes in the middle of this?
+                eventPublisher.publish(this, event, subscribers);
+
+            } catch (Exception e) {
+                // Publishers are expected to deal with exceptions.
+                throw new IllegalStateException("EventPublisher threw an exception.", e);
+            }
         }
     }
 }

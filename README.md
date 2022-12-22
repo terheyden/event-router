@@ -40,8 +40,27 @@ and the cornerstone of cloud computing.
 * JDK 1.8+ compatible
   * If you're stuck using JDK 1.8, we've got you covered
 
-## TODO
-More stuff goes here.
+## How to use
+### Maven
+```xml
+<dependency>
+    <groupId>com.terheyden</groupId>
+    <artifactId>event-router</artifactId>
+    <version>0.0.1</version>
+</dependency>
+```
+
+### Your first event router
+```java
+// Let's make a simple event router.
+EventRouter eventRouter = new EventRouter();
+
+// Let's subscribe to all String events.
+eventRouter.subscribe(String.class, str -> System.out.println("Received: " + str));
+
+// Sweet, now let's publish our first event.
+eventRouter.publish("Hello, world!");
+```
 
 ## Exception handling
 If an exception is thrown while an event is being handled by a subscriber,

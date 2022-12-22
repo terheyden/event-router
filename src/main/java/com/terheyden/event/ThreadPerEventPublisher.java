@@ -1,6 +1,7 @@
 package com.terheyden.event;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -21,5 +22,12 @@ public class ThreadPerEventPublisher extends BaseThreadPoolPublisher {
     public void publish(EventRouter sourceRouter, Object event, List<EventSubscription> subscribers) {
         // "Per event" means we'll call subscribers in-order.
         execute(() -> publishAllChecked(sourceRouter, subscribers, event));
+    }
+
+    public <T> CompletableFuture<T> publishAndReturn(EventRouter sourceRouter, Object event, List<EventSubscription> subscribers) {
+        return CompletableFuture.supplyAsync(() -> {
+            publishAllChecked(sourceRouter, subscribers, event);
+            return null;
+        }, threadPool);
     }
 }

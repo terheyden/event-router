@@ -20,8 +20,8 @@ public final class EventSubscription {
         this.eventHandler = recastConsumer(eventHandler);
     }
 
-    public static EventSubscription createNew(CheckedConsumer<?> eventHandler) {
-        return new EventSubscription(UUID.randomUUID(), eventHandler);
+    public static EventSubscription createNew(UUID subscriptionId, CheckedConsumer<?> eventHandler) {
+        return new EventSubscription(subscriptionId, eventHandler);
     }
 
     @SuppressWarnings("unchecked")
