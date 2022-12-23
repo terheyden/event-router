@@ -9,6 +9,7 @@ import java.util.concurrent.Semaphore;
 import org.slf4j.Logger;
 
 import io.vavr.CheckedConsumer;
+import io.vavr.CheckedFunction1;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -67,11 +68,29 @@ public class EventRouter {
      * @return A UUID that can later be used to unsubscribe.
      */
     public <T> UUID subscribe(Class<T> eventClass, CheckedConsumer<T> eventHandler) {
-        // Concurrent, so we don't need to synchronize.
         // subscribe() expectes a consumer, but we store it as a function.
-        CheckedConsumer handler = eventHandler;
-        ConsumerFunction1<Object, Object> eventFunc = new ConsumerFunction1<Object, Object>(handler);
-        return eventSubscriberMap.add(eventClass, eventFunc);
+        ConsumerFunction1<Object, Object> eventFunc = consumerToFunction(eventHandler);
+        return subscribeInternal(eventClass, eventFunc);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> ConsumerFunction1<Object, Object> consumerToFunction(CheckedConsumer<T> eventHandler) {
+        return new ConsumerFunction1<Object, Object>((CheckedConsumer) eventHandler);
+    }
+
+    public <T, R> UUID subscribeWithReply(Class<T> eventClass, CheckedFunction1<T, R> eventHandler) {
+        return subscribeInternal(eventClass, eventHandler);
+    }
+
+    public <T, R> UUID subscribeInternal(Object uuidClass, CheckedFunction1<T, R> eventHandler) {
+        // Concurrent, so we don't need to synchronize.
+        CheckedFunction1<Object, Object> eventFunc = functionToFunction(eventHandler);
+        return eventSubscriberMap.add(uuidClass, eventFunc);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T, R> CheckedFunction1<Object, Object> functionToFunction(CheckedFunction1<T, R> eventHandler) {
+        return (CheckedFunction1<Object, Object>) eventHandler;
     }
 
     /**
@@ -117,6 +136,19 @@ public class EventRouter {
         publishRequests.add(new PublishRequest(event, uuidClass));
         // Then, process the queue.
         processAllPublishRequests();
+    }
+
+    public <T, R> UUID query(T event, Class<R> expectedReplyType, CheckedConsumer<R> replyHandler) {
+        // Each query gets its own 'event' using the UUID.
+        UUID queryId = UUID.randomUUID();
+        ConsumerFunction1<Object, Object> handler = consumerToFunction(replyHandler);
+        eventSubscriberMap.add(queryId, handler);
+        // Tell the publish request that this is a query.
+        PublishRequest publishRequest = new PublishRequest(event, event.getClass(), queryId);
+        publishRequests.add(publishRequest);
+        // Then, process the queue.
+        processAllPublishRequests();
+        return queryId;
     }
 
     /**
@@ -167,7 +199,14 @@ public class EventRouter {
             eventKey.toString(),
             subscribers.size());
 
-        eventPublisher.publish(this, event, subscribers);
+        if (publishRequest.replyEventKey().isPresent()) {
+            // This is a query.
+            UUID replyKey = publishRequest.replyEventKey().get();
+            eventPublisher.query(this, event, subscribers, replyKey);
+        } else {
+            // This is a regular publish.
+            eventPublisher.publish(this, event, subscribers);
+        }
     }
 
     /**
