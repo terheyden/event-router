@@ -1,7 +1,7 @@
 package com.terheyden.event;
 
 import java.util.Collection;
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Publishes events to subscribers "directly," meaning, on the calling thread.
@@ -18,11 +18,11 @@ public class DirectPublisher implements EventPublisher {
         EventRouter sourceRouter,
         Object event,
         Collection<EventSubscription> subscribers,
-        UUID callbackEventKey) {
+        CompletableFuture<Object> callbackFuture) {
 
         subscribers.forEach(sub -> {
             Object result = sub.getEventHandler().unchecked().apply(event);
-            sourceRouter.publishInternal(result, callbackEventKey);
+            callbackFuture.complete(result);
         });
     }
 }

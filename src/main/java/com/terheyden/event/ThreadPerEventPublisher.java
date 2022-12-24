@@ -1,7 +1,7 @@
 package com.terheyden.event;
 
 import java.util.Collection;
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -29,11 +29,11 @@ public class ThreadPerEventPublisher extends BaseThreadPoolPublisher {
         EventRouter sourceRouter,
         Object event,
         Collection<EventSubscription> subscribers,
-        UUID callbackEventKey) {
+        CompletableFuture<Object> callbackFuture) {
 
         execute(() -> subscribers.forEach(sub -> {
             Object result = sub.getEventHandler().unchecked().apply(event);
-            sourceRouter.publishInternal(result, callbackEventKey);
+            callbackFuture.complete(result);
         }));
     }
 }

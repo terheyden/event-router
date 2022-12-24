@@ -1,7 +1,7 @@
 package com.terheyden.event;
 
 import java.util.Collection;
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Strategies for delivering events.
@@ -30,6 +30,6 @@ public interface EventPublisher {
         EventRouter sourceRouter,
         Object event,
         Collection<EventSubscription> subscribers,
-        UUID callbackEventKey);
+        CompletableFuture<Object> callbackFuture);
 
 }

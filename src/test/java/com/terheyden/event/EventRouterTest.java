@@ -2,7 +2,7 @@ package com.terheyden.event;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -41,22 +41,20 @@ public class EventRouterTest {
     @DisplayName("Base case — publish one event, subscribe to it, and receive it")
     public void testBaseCaseQuery() {
 
-        AtomicBoolean called = new AtomicBoolean(false);
-
         // "If you send me a String, I'll reply with the length."
-        router.subscribeWithReply(String.class, String::length);
+        router.subscribeAndReply(String.class, String::length);
 
         // "Oh hey how long is this String I have?"
-        router.query(
-            HELLO,
-            Integer.class,
-            strLen -> {
-                assertEquals(HELLO.length(), strLen);
-                called.set(true);
-            });
+//        router.query(
+//            HELLO,
+//            Integer.class,
+//            strLen -> {
+//                assertEquals(HELLO.length(), strLen);
+//                called.set(true);
+//            });
 
-        // TODO: CompletableFuture<Integer> future = router.query(HELLO, Integer.class);
-        assertTrue(called.get());
+        CompletableFuture<Integer> future = router.query(HELLO, Integer.class);
+        assertEquals(HELLO.length(), future.join());
     }
 
     @Test

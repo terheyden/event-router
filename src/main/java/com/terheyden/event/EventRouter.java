@@ -3,6 +3,7 @@ package com.terheyden.event;
 import javax.annotation.Nullable;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
@@ -29,10 +30,16 @@ public class EventRouter {
     private final EventSubscriberMap eventSubscriberMap = new EventSubscriberMap();
 
     /**
-     * Defines the publish strategy.
+     * Defines the direct publish strategy.
      * Are messages sent directly (on the calling thread), multi-thread, in-order, etc.
      */
     private final EventPublisher eventPublisher;
+
+    /**
+     * Defines the async publish strategy.
+     * Are messages sent directly (on the calling thread), multi-thread, in-order, etc.
+     */
+    private final EventPublisher eventPublisherAsync;
 
     /**
      * Events should be processed in-order. If publishing one event causes another,
@@ -51,6 +58,7 @@ public class EventRouter {
      */
     public EventRouter(EventRouterConfig config) {
         this.eventPublisher = config.eventPublisher();
+        this.eventPublisherAsync = config.eventPublisherAsync();
     }
 
     /**
@@ -73,12 +81,7 @@ public class EventRouter {
         return subscribeInternal(eventClass, eventFunc);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> ConsumerFunction1<Object, Object> consumerToFunction(CheckedConsumer<T> eventHandler) {
-        return new ConsumerFunction1<Object, Object>((CheckedConsumer) eventHandler);
-    }
-
-    public <T, R> UUID subscribeWithReply(Class<T> eventClass, CheckedFunction1<T, R> eventHandler) {
+    public <T, R> UUID subscribeAndReply(Class<T> eventClass, CheckedFunction1<T, R> eventHandler) {
         return subscribeInternal(eventClass, eventHandler);
     }
 
@@ -86,11 +89,6 @@ public class EventRouter {
         // Concurrent, so we don't need to synchronize.
         CheckedFunction1<Object, Object> eventFunc = functionToFunction(eventHandler);
         return eventSubscriberMap.add(uuidClass, eventFunc);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T, R> CheckedFunction1<Object, Object> functionToFunction(CheckedFunction1<T, R> eventHandler) {
-        return (CheckedFunction1<Object, Object>) eventHandler;
     }
 
     /**
@@ -115,7 +113,7 @@ public class EventRouter {
      *                   is a subclass of the subscribed event class type.
      */
     public void publish(Object event, Class<?> eventClass) {
-        publishInternal(event, eventClass);
+        publishInternal(event, eventClass, eventPublisher);
     }
 
     /**
@@ -125,30 +123,37 @@ public class EventRouter {
      * @param event The event to publish.
      */
     public void publish(Object event) {
-        publishInternal(event, event.getClass());
+        publish(event, event.getClass());
+    }
+
+    public void publishAsync(Object event, Class<?> eventClass) {
+        publishInternal(event, eventClass, eventPublisherAsync);
+    }
+
+    public void publishAsync(Object event) {
+        publishAsync(event, event.getClass());
     }
 
     /**
      * Internal publish that works with UUIDs.
      */
-    /*package*/ void publishInternal(Object event, Object uuidClass) {
+    /*package*/ void publishInternal(Object event, Object uuidClass, EventPublisher publisher) {
         // First, put the event on the queue.
-        publishRequests.add(new PublishRequest(event, uuidClass));
+        publishRequests.add(new PublishRequest(event, uuidClass, publisher));
         // Then, process the queue.
         processAllPublishRequests();
     }
 
-    public <T, R> UUID query(T event, Class<R> expectedReplyType, CheckedConsumer<R> replyHandler) {
-        // Each query gets its own 'event' using the UUID.
-        UUID queryId = UUID.randomUUID();
-        ConsumerFunction1<Object, Object> handler = consumerToFunction(replyHandler);
-        eventSubscriberMap.add(queryId, handler);
+    @SuppressWarnings("unchecked")
+    public <T, R> CompletableFuture<R> query(T event, Class<R> expectedReplyType) {
+
         // Tell the publish request that this is a query.
-        PublishRequest publishRequest = new PublishRequest(event, event.getClass(), queryId);
+        CompletableFuture<Object> callbackFuture = new CompletableFuture<>();
+        PublishRequest publishRequest = new PublishRequest(event, event.getClass(), eventPublisher, callbackFuture);
         publishRequests.add(publishRequest);
         // Then, process the queue.
         processAllPublishRequests();
-        return queryId;
+        return (CompletableFuture<R>) callbackFuture;
     }
 
     /**
@@ -199,13 +204,15 @@ public class EventRouter {
             eventKey.toString(),
             subscribers.size());
 
-        if (publishRequest.replyEventKey().isPresent()) {
+        EventPublisher publisher = publishRequest.eventPublisher();
+
+        if (publishRequest.callbackFuture().isPresent()) {
             // This is a query.
-            UUID replyKey = publishRequest.replyEventKey().get();
-            eventPublisher.query(this, event, subscribers, replyKey);
+            CompletableFuture<Object> callbackFuture = publishRequest.callbackFuture().get();
+            publisher.query(this, event, subscribers, callbackFuture);
         } else {
             // This is a regular publish.
-            eventPublisher.publish(this, event, subscribers);
+            publisher.publish(this, event, subscribers);
         }
     }
 
@@ -230,5 +237,15 @@ public class EventRouter {
 
         LOG.debug("No subscribers for event: {}", event);
         publish(new NoSubscribersEvent(event, eventClassKey));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> ConsumerFunction1<Object, Object> consumerToFunction(CheckedConsumer<T> eventHandler) {
+        return new ConsumerFunction1<Object, Object>((CheckedConsumer) eventHandler);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T, R> CheckedFunction1<Object, Object> functionToFunction(CheckedFunction1<T, R> eventHandler) {
+        return (CheckedFunction1<Object, Object>) eventHandler;
     }
 }
