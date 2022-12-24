@@ -2,6 +2,7 @@ package com.terheyden.event;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -9,33 +10,40 @@ import java.util.concurrent.CompletableFuture;
  */
 /*package*/  class PublishRequest {
 
+    private final EventRouter eventRouter;
     private final Object eventObj;
     private final Object eventKey;
     private final EventPublisher eventPublisher;
-
+    private final Queue<EventSubscription> subscribers;
     @Nullable
     private final CompletableFuture<Object> callbackFuture;
 
     /*package*/ PublishRequest(
-        Object eventObj,
+        EventRouter eventRouter, Object eventObj,
         Object eventKey,
         EventPublisher eventPublisher,
+        Queue<EventSubscription> subscribers,
         @Nullable CompletableFuture<Object> callbackFuture) {
+        this.eventRouter = eventRouter;
 
         this.eventKey = eventKey;
         this.eventObj = eventObj;
         this.eventPublisher = eventPublisher;
+        this.subscribers = subscribers;
         this.callbackFuture = callbackFuture;
     }
 
     /*package*/ PublishRequest(
-        Object eventObj,
+        EventRouter eventRouter, Object eventObj,
         Object eventKey,
-        EventPublisher eventPublisher) {
+        EventPublisher eventPublisher,
+        Queue<EventSubscription> subscribers) {
+        this.eventRouter = eventRouter;
 
         this.eventKey = eventKey;
         this.eventObj = eventObj;
         this.eventPublisher = eventPublisher;
+        this.subscribers = subscribers;
         this.callbackFuture = null;
     }
 
@@ -53,5 +61,13 @@ import java.util.concurrent.CompletableFuture;
 
     /*package*/ Optional<CompletableFuture<Object>> callbackFuture() {
         return Optional.ofNullable(callbackFuture);
+    }
+
+    /*package*/ Queue<EventSubscription> subscribers() {
+        return subscribers;
+    }
+
+    /*package*/ EventRouter eventRouter() {
+        return eventRouter;
     }
 }

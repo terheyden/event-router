@@ -62,8 +62,6 @@ eventRouter.subscribe(String.class, str -> System.out.println("Received: " + str
 eventRouter.publish("Hello, world!");
 ```
 
-## Exception handling
-If an exception is thrown while an event is being handled by a subscriber,
-the exception and event details are wrapped in an `EventRouterPublishException`
-and published as a separate event. That way, the caller can handle the
-exception however they want.
+# TODO
+* Guarantee same-thread delivery,
+  so the lock should only avoid from the same thread
