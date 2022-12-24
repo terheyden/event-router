@@ -20,14 +20,12 @@ public interface EventPublisher {
      * the order in which they were subscribed (not that the publisher needs to obey that
      * depending on the strategy, but it could).
      *
-     * @param sourceRouter The router that made the publish request.
-     * @param event The event to deliver to each {@link EventSubscription}.
+     * @param event       The event to deliver to each {@link EventSubscription}.
      * @param subscribers The concurrent collection of subscribers to deliver the event to, guaranteed to be non-empty.
      */
-    void publish(EventRouter sourceRouter, Object event, Collection<EventSubscription> subscribers);
+    void publish(Object event, Collection<EventSubscription> subscribers);
 
     void query(
-        EventRouter sourceRouter,
         Object event,
         Collection<EventSubscription> subscribers,
         CompletableFuture<Object> callbackFuture);

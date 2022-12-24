@@ -18,14 +18,13 @@ public class ThreadPerSubscriberPublisher extends BaseThreadPoolPublisher {
     }
 
     @Override
-    public void publish(EventRouter sourceRouter, Object event, Collection<EventSubscription> subscribers) {
+    public void publish(Object event, Collection<EventSubscription> subscribers) {
         // No ordering required, every subscriber gets notified at once.
         subscribers.forEach(sub -> execute(() -> sub.getEventHandler().unchecked().apply(event)));
     }
 
     @Override
     public void query(
-        EventRouter sourceRouter,
         Object event,
         Collection<EventSubscription> subscribers,
         CompletableFuture<Object> callbackFuture) {

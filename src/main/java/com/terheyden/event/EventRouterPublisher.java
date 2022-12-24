@@ -19,7 +19,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Not static, so you can have multiple event routers.
  * The user can always make it static if they want.
  */
-public class EventRouter {
+public class EventRouterPublisher {
 
     private static final Logger LOG = getLogger(EventRouter.class);
 
@@ -56,7 +56,7 @@ public class EventRouter {
     /**
      * Create a new event router with the settings provided in the config object.
      */
-    public EventRouter(EventRouterConfig config) {
+    public EventRouterPublisher(EventRouterConfig config) {
         this.eventPublisher = config.eventPublisher();
         this.eventPublisherAsync = config.eventPublisherAsync();
     }
@@ -64,7 +64,7 @@ public class EventRouter {
     /**
      * Uses default config with direct publishing (uses calling thread) to create a new event router.
      */
-    public EventRouter() {
+    public EventRouterPublisher() {
         this(new EventRouterConfig());
     }
 

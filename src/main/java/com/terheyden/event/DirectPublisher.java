@@ -9,13 +9,12 @@ import java.util.concurrent.CompletableFuture;
 public class DirectPublisher implements EventPublisher {
 
     @Override
-    public void publish(EventRouter sourceRouter, Object event, Collection<EventSubscription> subscribers) {
+    public void publish(Object event, Collection<EventSubscription> subscribers) {
         subscribers.forEach(sub -> sub.getEventHandler().unchecked().apply(event));
     }
 
     @Override
     public void query(
-        EventRouter sourceRouter,
         Object event,
         Collection<EventSubscription> subscribers,
         CompletableFuture<Object> callbackFuture) {
