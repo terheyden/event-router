@@ -13,7 +13,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Handles publish and query requests.
  */
-/*package*/ class EventRouterPublisher {
+class EventRouterPublisher {
 
     private static final Logger LOG = getLogger(EventRouterPublisher.class);
 
@@ -32,14 +32,14 @@ import static org.slf4j.LoggerFactory.getLogger;
     /**
      * Internal publish that works with UUIDs.
      */
-    /*package*/ void publishInternal(PublishRequest publishRequest) {
+    void publish(PublishRequest publishRequest) {
         // First, put the event on the queue.
         publishRequests.add(publishRequest);
         // Then, process the queue.
         processAllPublishRequests();
     }
 
-    /*package*/ void query(PublishRequest publishRequest) {
+    void query(PublishRequest publishRequest) {
 
         // Put the query on the queue.
         publishRequests.add(publishRequest);
@@ -88,23 +88,36 @@ import static org.slf4j.LoggerFactory.getLogger;
             return;
         }
 
+        // Sending subscribers as a second param instead of letting the methods pull it out
+        // since we have added value by validating.
+        if (publishRequest instanceof QueryRequest) {
+            sendQueryRequest((QueryRequest) publishRequest, subscribers);
+        } else {
+            sendPublishRequest(publishRequest, subscribers);
+        }
+    }
+
+    private static void sendPublishRequest(
+        PublishRequest publishRequest,
+        Queue<EventSubscription> subscribers) {
+
         Object event = publishRequest.event();
-        Object eventKey = publishRequest.eventKey();
-        LOG.debug(
-            "Publishing event type '{}' to {} subscribers.",
-            eventKey.toString(),
-            subscribers.size());
+        Class<?> eventType = publishRequest.eventType();
+        LOG.debug("Publishing event type '{}' to {} subscribers.", eventType, subscribers.size());
 
         EventPublisher publisher = publishRequest.eventPublisher();
+        publisher.publish(event, subscribers);
+    }
 
-        if (publishRequest.callbackFuture().isPresent()) {
-            // This is a query.
-            CompletableFuture<Object> callbackFuture = publishRequest.callbackFuture().get();
-            publisher.query(event, subscribers, callbackFuture);
-        } else {
-            // This is a regular publish.
-            publisher.publish(event, subscribers);
-        }
+    private static void sendQueryRequest(QueryRequest queryRequest, Queue<EventSubscription> subscribers) {
+
+        Object event = queryRequest.event();
+        Class<?> eventType = queryRequest.eventType();
+        LOG.debug("Query event type '{}' to {} subscribers.", eventType, subscribers.size());
+
+        EventPublisher publisher = queryRequest.eventPublisher();
+        CompletableFuture<Object> callbackFuture = queryRequest.callbackFuture();
+        publisher.query(event, subscribers, callbackFuture);
     }
 
     /**
@@ -112,15 +125,9 @@ import static org.slf4j.LoggerFactory.getLogger;
      */
     private static void handleNoSubscribersEvent(PublishRequest request) {
 
-        Object eventKey = request.eventKey();
-        // If it's not a class, it's an internal event.
-        if (!(eventKey instanceof Class)) {
-            return;
-        }
-
-        Class<?> eventClassKey = (Class<?>) eventKey;
+        Class<?> eventType = request.eventType();
         // https://stackoverflow.com/questions/12145185/determine-if-a-class-implements-a-interface-in-java
-        boolean internalEvent = SpecialEvent.class.isAssignableFrom(eventClassKey);
+        boolean internalEvent = SpecialEvent.class.isAssignableFrom(eventType);
 
         if (internalEvent) {
             // Avoid infinite loop.
@@ -130,6 +137,6 @@ import static org.slf4j.LoggerFactory.getLogger;
         Object event = request.event();
         EventRouter eventRouter = request.eventRouter();
         LOG.debug("No subscribers for event: {}", event);
-        eventRouter.publish(new NoSubscribersEvent(event, eventClassKey));
+        eventRouter.publish(new NoSubscribersEvent(event, eventType));
     }
 }

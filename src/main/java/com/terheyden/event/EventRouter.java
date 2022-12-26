@@ -52,48 +52,43 @@ public class EventRouter {
     /**
      * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
      *
-     * @param eventClass Events are defined by their class type.
+     * @param eventType Events are defined by their class type.
      *                   This is the type of event that the handler will be subscribed to.
      * @return A UUID that can later be used to unsubscribe.
      */
-    public <T> UUID subscribe(Class<T> eventClass, CheckedConsumer<T> eventHandler) {
-        return subscriber.subscribe(eventClass, eventHandler);
+    @SuppressWarnings("unchecked")
+    public <T> UUID subscribe(Class<T> eventType, CheckedConsumer<T> eventHandler) {
+        // subscribe() expectes a consumer, but we store it as a function.
+        CheckedFunction1<Class<?>, Object> eventFunc = (CheckedFunction1<Class<?>, Object>) eventHandler;
+        return subscriber.subscribe(eventType, eventFunc);
     }
 
-    public <T, R> UUID subscribeAndReply(Class<T> eventClass, CheckedFunction1<T, R> eventHandler) {
-        return subscriber.subscribeInternal(eventClass, eventHandler);
+    public <T, R> UUID subscribeAndReply(Class<T> eventType, CheckedFunction1<T, R> eventHandler) {
+        return subscriber.subscribe(eventType, eventHandler);
     }
 
     /**
      * Unsubscribe a previously-subscribed handler by its UUID.
      *
-     * @param eventClass Events are defined by their class type.
-     *                   This is the type of event that the handler was subscribed to.
+     * @param eventType     Events are defined by their class type.
+     *                       This is the type of event that the handler was subscribed to.
      * @param subscriptionId The UUID returned by the subscribe() method.
      * @return True if the subscription was found and removed.
      */
-    public <T> boolean unsubscribe(Class<T> eventClass, UUID subscriptionId) {
-        return subscriber.unsubscribe(eventClass, subscriptionId);
+    public <T> boolean unsubscribe(Class<T> eventType, UUID subscriptionId) {
+        return subscriber.unsubscribe(eventType, subscriptionId);
     }
 
     /**
      * Publish an event to all subscribers of the event object's type.
      * For example, {@code publish("hello")} will call all subscribers of type {@code String.class}.
      *
-     * @param event The event to publish.
-     * @param eventClass The event class type. It may be useful to specify this if this event object type
+     * @param event      The event to publish.
+     * @param eventType The event class type. It may be useful to specify this if this event object type
      *                   is a subclass of the subscribed event class type.
      */
-    public void publish(Object event, Class<?> eventClass) {
-
-        PublishRequest request = new PublishRequest(
-            this,
-            event,
-            eventClass,
-            eventPublisher,
-            subscriber.findSubscribers(eventClass));
-
-        publisher.publishInternal(request);
+    public void publish(Object event, Class<?> eventType) {
+        publishInternal(eventPublisher, event, eventType);
     }
 
     /**
@@ -103,33 +98,42 @@ public class EventRouter {
      * @param event The event to publish.
      */
     public void publish(Object event) {
-        publish(event, event.getClass());
+        publishInternal(eventPublisher, event);
     }
 
     public void publishAsync(Object event, Class<?> eventClass) {
+        publishInternal(eventPublisherAsync, event, eventClass);
+    }
+
+    public void publishAsync(Object event) {
+        publishInternal(eventPublisherAsync, event);
+    }
+
+    private void publishInternal(EventPublisher publisher, Object event, Class<?> eventClass) {
 
         PublishRequest request = new PublishRequest(
             this,
             event,
             eventClass,
-            eventPublisherAsync,
+            publisher,
             subscriber.findSubscribers(eventClass));
 
-        publisher.publishInternal(request);
+        this.publisher.publish(request);
     }
 
-    public void publishAsync(Object event) {
-        publishAsync(event, event.getClass());
+    private void publishInternal(EventPublisher publisher, Object event) {
+        publishInternal(publisher, event, event.getClass());
     }
 
     @SuppressWarnings("unchecked")
     public <T, R> CompletableFuture<R> query(T event, Class<R> expectedReplyType) {
 
-        // Tell the publish request that this is a query.
+        // The subscriber should complete this.
         CompletableFuture<Object> callbackFuture = new CompletableFuture<>();
 
-        PublishRequest request = new PublishRequest(
-            this, event,
+        QueryRequest request = new QueryRequest(
+            this,
+            event,
             event.getClass(),
             eventPublisher,
             subscriber.findSubscribers(event.getClass()),

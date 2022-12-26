@@ -6,18 +6,18 @@ package com.terheyden.event;
 public class NoSubscribersEvent implements SpecialEvent {
 
     private final Object eventObj;
-    private final Class<?> eventClass;
+    private final Class<?> eventType;
 
-    public NoSubscribersEvent(Object eventObj, Class<?> eventClass) {
+    public NoSubscribersEvent(Object eventObj, Class<?> eventType) {
         this.eventObj = eventObj;
-        this.eventClass = eventClass;
+        this.eventType = eventType;
     }
 
     public Object event() {
         return eventObj;
     }
 
-    public Class<?> eventClass() {
-        return eventClass;
+    public Class<?> eventType() {
+        return eventType;
     }
 }
