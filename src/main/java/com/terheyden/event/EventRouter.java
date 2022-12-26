@@ -53,13 +53,12 @@ public class EventRouter {
      * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
      *
      * @param eventType Events are defined by their class type.
-     *                   This is the type of event that the handler will be subscribed to.
+     *                  This is the type of event that the handler will be subscribed to.
      * @return A UUID that can later be used to unsubscribe.
      */
-    @SuppressWarnings("unchecked")
     public <T> UUID subscribe(Class<T> eventType, CheckedConsumer<T> eventHandler) {
         // subscribe() expectes a consumer, but we store it as a function.
-        CheckedFunction1<Class<?>, Object> eventFunc = (CheckedFunction1<Class<?>, Object>) eventHandler;
+        CheckedFunction1<Class<?>, Object> eventFunc = EventUtils.consumerToFunction(eventHandler);
         return subscriber.subscribe(eventType, eventFunc);
     }
 
@@ -70,7 +69,7 @@ public class EventRouter {
     /**
      * Unsubscribe a previously-subscribed handler by its UUID.
      *
-     * @param eventType     Events are defined by their class type.
+     * @param eventType      Events are defined by their class type.
      *                       This is the type of event that the handler was subscribed to.
      * @param subscriptionId The UUID returned by the subscribe() method.
      * @return True if the subscription was found and removed.
@@ -83,9 +82,9 @@ public class EventRouter {
      * Publish an event to all subscribers of the event object's type.
      * For example, {@code publish("hello")} will call all subscribers of type {@code String.class}.
      *
-     * @param event      The event to publish.
+     * @param event     The event to publish.
      * @param eventType The event class type. It may be useful to specify this if this event object type
-     *                   is a subclass of the subscribed event class type.
+     *                  is a subclass of the subscribed event class type.
      */
     public void publish(Object event, Class<?> eventType) {
         publishInternal(eventPublisher, event, eventType);
@@ -125,9 +124,19 @@ public class EventRouter {
         publishInternal(publisher, event, event.getClass());
     }
 
-    @SuppressWarnings("unchecked")
     public <T, R> CompletableFuture<R> query(T event, Class<R> expectedReplyType) {
+        return queryInternal(eventPublisher, event, expectedReplyType);
+    }
 
+    public <T, R> CompletableFuture<R> queryAsync(T event, Class<R> expectedReplyType) {
+        return queryInternal(eventPublisherAsync, event, expectedReplyType);
+    }
+
+    @SuppressWarnings("unchecked")
+    <T, R> CompletableFuture<R> queryInternal(EventPublisher publisher, T event, Class<R> expectedReplyType) {
+
+        // The expected reply type is just to help with generic typing.
+        assert expectedReplyType != null;
         // The subscriber should complete this.
         CompletableFuture<Object> callbackFuture = new CompletableFuture<>();
 
@@ -135,11 +144,11 @@ public class EventRouter {
             this,
             event,
             event.getClass(),
-            eventPublisher,
+            publisher,
             subscriber.findSubscribers(event.getClass()),
             callbackFuture);
 
-        publisher.query(request);
+        this.publisher.query(request);
         return (CompletableFuture<R>) callbackFuture;
     }
 }

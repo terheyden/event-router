@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -58,6 +59,22 @@ public class EventRouterTest {
     }
 
     @Test
+    public void testQueryAsync() {
+
+        // "If you send me a String, I'll reply with the length."
+        UUID subId = router.subscribeAndReply(String.class, str -> {
+            Thread.sleep(100);
+            return str.length();
+        });
+
+        // "Oh hey how long is this String I have?"
+        CompletableFuture<Integer> future = router.queryAsync(HELLO, Integer.class);
+        assertFalse(future.isDone()); // Should be delayed by the timer.
+        assertEquals(HELLO.length(), future.join());
+        assertTrue(router.unsubscribe(String.class, subId));
+    }
+
+    @Test
     public void testUnsubscribe() {
 
         AtomicInteger counter = new AtomicInteger(0);
@@ -67,7 +84,8 @@ public class EventRouterTest {
             e -> counter.incrementAndGet());
 
         router.publish(HELLO);
-        router.unsubscribe(String.class, subscriptionId);
+        assertTrue(router.unsubscribe(String.class, subscriptionId));
+        assertFalse(router.unsubscribe(String.class, subscriptionId));
         router.publish(HELLO);
 
         // Should only have been called once.

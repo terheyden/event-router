@@ -6,7 +6,7 @@ package com.terheyden.event;
 public class EventRouterConfig {
 
     private EventPublisher eventPublisher = new DirectPublisher();
-    private EventPublisher eventPublisherAsync = new ThreadPerEventPublisher(1000);
+    private EventPublisher eventPublisherAsync = new ThreadPerEventPublisher(10);
 
     public EventPublisher eventPublisher() {
         return eventPublisher;
