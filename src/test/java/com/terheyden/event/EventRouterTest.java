@@ -2,7 +2,6 @@ package com.terheyden.event;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -39,42 +38,6 @@ public class EventRouterTest {
     }
 
     @Test
-    @DisplayName("Base case — publish one event, subscribe to it, and receive it")
-    public void testBaseCaseQuery() {
-
-        // "If you send me a String, I'll reply with the length."
-        router.subscribeAndReply(String.class, String::length);
-
-        // "Oh hey how long is this String I have?"
-//        router.query(
-//            HELLO,
-//            Integer.class,
-//            strLen -> {
-//                assertEquals(HELLO.length(), strLen);
-//                called.set(true);
-//            });
-
-        CompletableFuture<Integer> future = router.query(HELLO, Integer.class);
-        assertEquals(HELLO.length(), future.join());
-    }
-
-    @Test
-    public void testQueryAsync() {
-
-        // "If you send me a String, I'll reply with the length."
-        UUID subId = router.subscribeAndReply(String.class, str -> {
-            Thread.sleep(100);
-            return str.length();
-        });
-
-        // "Oh hey how long is this String I have?"
-        CompletableFuture<Integer> future = router.queryAsync(HELLO, Integer.class);
-        assertFalse(future.isDone()); // Should be delayed by the timer.
-        assertEquals(HELLO.length(), future.join());
-        assertTrue(router.unsubscribe(String.class, subId));
-    }
-
-    @Test
     public void testUnsubscribe() {
 
         AtomicInteger counter = new AtomicInteger(0);
@@ -84,8 +47,8 @@ public class EventRouterTest {
             e -> counter.incrementAndGet());
 
         router.publish(HELLO);
-        assertTrue(router.unsubscribe(String.class, subscriptionId));
-        assertFalse(router.unsubscribe(String.class, subscriptionId));
+        assertTrue(router.unsubscribe(subscriptionId));
+        assertFalse(router.unsubscribe(subscriptionId));
         router.publish(HELLO);
 
         // Should only have been called once.

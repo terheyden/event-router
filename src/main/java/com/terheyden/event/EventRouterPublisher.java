@@ -2,7 +2,6 @@ package com.terheyden.event;
 
 import javax.annotation.Nullable;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
@@ -88,13 +87,7 @@ class EventRouterPublisher {
             return;
         }
 
-        // Sending subscribers as a second param instead of letting the methods pull it out
-        // since we have added value by validating.
-        if (publishRequest instanceof QueryRequest) {
-            sendQueryRequest((QueryRequest) publishRequest, subscribers);
-        } else {
-            sendPublishRequest(publishRequest, subscribers);
-        }
+        sendPublishRequest(publishRequest, subscribers);
     }
 
     private static void sendPublishRequest(
@@ -107,17 +100,6 @@ class EventRouterPublisher {
 
         EventPublisher publisher = publishRequest.eventPublisher();
         publisher.publish(event, subscribers);
-    }
-
-    private static void sendQueryRequest(QueryRequest queryRequest, Queue<EventSubscription> subscribers) {
-
-        Object event = queryRequest.event();
-        Class<?> eventType = queryRequest.eventType();
-        LOG.debug("Query event type '{}' to {} subscribers.", eventType, subscribers.size());
-
-        EventPublisher publisher = queryRequest.eventPublisher();
-        CompletableFuture<Object> callbackFuture = queryRequest.callbackFuture();
-        publisher.query(event, subscribers, callbackFuture);
     }
 
     /**

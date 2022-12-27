@@ -26,7 +26,7 @@ public class EventSubscriberMapTest {
     @Test
     public void testRemoveSubscription() {
         UUID uuid = map.add(String.class, str -> counter.incrementAndGet());
-        assertTrue(map.remove(String.class, uuid));
-        assertFalse(map.remove(String.class, uuid));
+        assertTrue(map.remove(uuid));
+        assertFalse(map.remove(uuid));
     }
 }

@@ -7,7 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import io.vavr.CheckedFunction1;
+import io.vavr.CheckedConsumer;
 
 /**
  * A map of event class types to their subscriptions.
@@ -23,7 +23,7 @@ class EventSubscriberMap {
      */
     private final Map<Class<?>, Queue<EventSubscription>> eventMap = new ConcurrentHashMap<>();
 
-    public UUID add(Class<?> eventType, CheckedFunction1<Object, Object> eventHandler) {
+    public <T> UUID add(Class<T> eventType, CheckedConsumer<T> eventHandler) {
 
         EventSubscription subscription = EventSubscription.createNew(eventHandler);
 
@@ -36,10 +36,19 @@ class EventSubscriberMap {
         return subscription.getSubscriptionId();
     }
 
-    boolean remove(Class<?> eventType, UUID subscriptionId) {
+    /**
+     * Remove a subscription by its UUID.
+     */
+    boolean remove(UUID subscriptionId) {
 
-        return find(eventType)
-            .removeIf(subscription -> subscription.getSubscriptionId().equals(subscriptionId));
+        // This could be more performant.
+        // Removes should be pretty uncommon,
+        // and the number of events shouldn't be terribly high.
+        // Concurrent, so we don't need to synchronize.
+        return eventMap.values()
+            .stream()
+            .map(eventSubs -> eventSubs.removeIf(sub -> sub.getSubscriptionId().equals(subscriptionId)))
+            .anyMatch(wasRemoved -> wasRemoved);
     }
 
     /**

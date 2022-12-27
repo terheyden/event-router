@@ -1,7 +1,6 @@
 package com.terheyden.event;
 
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Strategies for delivering events.
@@ -24,10 +23,4 @@ public interface EventPublisher {
      * @param subscribers The concurrent collection of subscribers to deliver the event to, guaranteed to be non-empty.
      */
     void publish(Object event, Collection<EventSubscription> subscribers);
-
-    void query(
-        Object event,
-        Collection<EventSubscription> subscribers,
-        CompletableFuture<Object> callbackFuture);
-
 }

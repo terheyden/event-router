@@ -1,7 +1,6 @@
 package com.terheyden.event;
 
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -21,18 +20,6 @@ public class ThreadPerEventPublisher extends BaseThreadPoolPublisher {
     @Override
     public void publish(Object event, Collection<EventSubscription> subscribers) {
         // "Per event" means we'll call subscribers in-order.
-        execute(() -> subscribers.forEach(sub -> sub.getEventHandler().unchecked().apply(event)));
-    }
-
-    @Override
-    public void query(
-        Object event,
-        Collection<EventSubscription> subscribers,
-        CompletableFuture<Object> callbackFuture) {
-
-        execute(() -> subscribers.forEach(sub -> {
-            Object result = sub.getEventHandler().unchecked().apply(event);
-            callbackFuture.complete(result);
-        }));
+        execute(() -> subscribers.forEach(sub -> sub.getEventHandler().unchecked().accept(event)));
     }
 }
