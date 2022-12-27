@@ -1,9 +1,7 @@
 package com.terheyden.event;
 
-import javax.annotation.Nullable;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.slf4j.Logger;
 
@@ -17,62 +15,19 @@ class EventRouterPublisher {
     private static final Logger LOG = getLogger(EventRouterPublisher.class);
 
     /**
-     * Events should be processed in-order. If publishing one event causes another,
-     * at least wait until the current event is finished.
+     * Blocking queue so threads will hang out until messages arrive.
+     * Threads in the middle of publishing should not interrupt themselves
+     * if, e.g., the running threads fires another event.
+     * Use: put() and take().
      */
-    private final Queue<PublishRequest> publishRequests = new ConcurrentLinkedQueue<>();
+    private final ThreadPoolExecutor publishRequestExecutor;
 
-    /**
-     * Publish requests should finish in-order.
-     * To enforce this, we use a lock.
-     */
-    private final Semaphore publishLock = new Semaphore(1);
+    EventRouterPublisher(ThreadPoolExecutor publishRequestExecutor) {
+        this.publishRequestExecutor = publishRequestExecutor;
+    }
 
-    /**
-     * Internal publish that works with UUIDs.
-     */
     void publish(PublishRequest publishRequest) {
-        // First, put the event on the queue.
-        publishRequests.add(publishRequest);
-        // Then, process the queue.
-        processAllPublishRequests();
-    }
-
-    void query(PublishRequest publishRequest) {
-
-        // Put the query on the queue.
-        publishRequests.add(publishRequest);
-        // Then, process the queue.
-        processAllPublishRequests();
-    }
-
-    /**
-     * Take from the publish request queue and deliver to subscribers
-     * until the queue is empty again.
-     */
-    private void processAllPublishRequests() {
-
-        // If someone's already processing the queue, don't do it again.
-        // This prevents the same thread from being interrupted by a second publish.
-        if (!publishLock.tryAcquire()) {
-            return;
-        }
-
-        // Put everything in a try so we can guarantee the lock will be released.
-        try {
-
-            @Nullable PublishRequest publishRequest = publishRequests.poll();
-
-            while (publishRequest != null) {
-
-                processPublishRequest(publishRequest);
-                // Get the next event.
-                publishRequest = publishRequests.poll();
-            }
-
-        } finally {
-            publishLock.release();
-        }
+        publishRequestExecutor.execute(() -> processPublishRequest(publishRequest));
     }
 
     /**
@@ -87,13 +42,6 @@ class EventRouterPublisher {
             return;
         }
 
-        sendPublishRequest(publishRequest, subscribers);
-    }
-
-    private static void sendPublishRequest(
-        PublishRequest publishRequest,
-        Queue<EventSubscription> subscribers) {
-
         Object event = publishRequest.event();
         Class<?> eventType = publishRequest.eventType();
         LOG.debug("Publishing event type '{}' to {} subscribers.", eventType, subscribers.size());
@@ -105,9 +53,9 @@ class EventRouterPublisher {
     /**
      * If it's a user event with no subscribers, send a {@link NoSubscribersEvent}.
      */
-    private static void handleNoSubscribersEvent(PublishRequest request) {
+    private static void handleNoSubscribersEvent(PublishRequest publishRequest) {
 
-        Class<?> eventType = request.eventType();
+        Class<?> eventType = publishRequest.eventType();
         // https://stackoverflow.com/questions/12145185/determine-if-a-class-implements-a-interface-in-java
         boolean internalEvent = SpecialEvent.class.isAssignableFrom(eventType);
 
@@ -116,9 +64,9 @@ class EventRouterPublisher {
             return;
         }
 
-        Object event = request.event();
-        EventRouter eventRouter = request.eventRouter();
-        LOG.debug("No subscribers for event: {}", event);
+        Object event = publishRequest.event();
+        EventRouter eventRouter = publishRequest.eventRouter();
+        LOG.debug("No subscribers for event: {} ({})", eventType, event);
         eventRouter.publish(new NoSubscribersEvent(event, eventType));
     }
 }

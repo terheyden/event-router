@@ -1,6 +1,6 @@
 package com.terheyden.event;
 
-import java.util.Collection;
+import java.util.Queue;
 
 /**
  * Strategies for delivering events.
@@ -22,5 +22,5 @@ public interface EventPublisher {
      * @param event       The event to deliver to each {@link EventSubscription}.
      * @param subscribers The concurrent collection of subscribers to deliver the event to, guaranteed to be non-empty.
      */
-    void publish(Object event, Collection<EventSubscription> subscribers);
+    void publish(Object event, Queue<EventSubscription> subscribers);
 }

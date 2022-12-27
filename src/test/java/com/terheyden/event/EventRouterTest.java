@@ -2,6 +2,7 @@ package com.terheyden.event;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -22,10 +23,13 @@ public class EventRouterTest {
     public static final String IGNORE = "IGNORE";
 
     private EventRouter router;
+    private ThreadPoolExecutor publishExecutor;
 
     @BeforeEach
     public void beforeEach() {
-        router = new EventRouter();
+        EventRouterConfig config = new EventRouterConfig();
+        router = new EventRouter(config);
+        publishExecutor = config.publishExecutor();
     }
 
     @Test
@@ -47,9 +51,13 @@ public class EventRouterTest {
             e -> counter.incrementAndGet());
 
         router.publish(HELLO);
+        EventTester.awaitEmpty(publishExecutor);
+
         assertTrue(router.unsubscribe(subscriptionId));
         assertFalse(router.unsubscribe(subscriptionId));
+
         router.publish(HELLO);
+        EventTester.awaitEmpty(publishExecutor);
 
         // Should only have been called once.
         assertEquals(1, counter.get());

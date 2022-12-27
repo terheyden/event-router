@@ -1,12 +1,23 @@
 package com.terheyden.event;
 
+import java.util.concurrent.ThreadPoolExecutor;
+
 /**
  * Used to configure a new {@link EventRouter}.
  */
 public class EventRouterConfig {
 
-    private EventPublisher eventPublisher = new DirectPublisher();
-    private EventPublisher eventPublisherAsync = new ThreadPerEventPublisher(10);
+    private ThreadPoolExecutor publishExecutor = ThreadPools.newDynamicThreadPool();
+    private EventPublisher eventPublisher = new PerEventPublisher();
+
+    public ThreadPoolExecutor publishExecutor() {
+        return publishExecutor;
+    }
+
+    public EventRouterConfig publishExecutor(ThreadPoolExecutor publishExecutor) {
+        this.publishExecutor = publishExecutor;
+        return this;
+    }
 
     public EventPublisher eventPublisher() {
         return eventPublisher;
@@ -14,15 +25,6 @@ public class EventRouterConfig {
 
     public EventRouterConfig eventPublisher(EventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
-        return this;
-    }
-
-    public EventPublisher eventPublisherAsync() {
-        return eventPublisherAsync;
-    }
-
-    public EventRouterConfig eventPublisherAsync(EventPublisher eventPublisherAsync) {
-        this.eventPublisherAsync = eventPublisherAsync;
         return this;
     }
 }

@@ -32,7 +32,7 @@ public class EventRouter {
      */
     public EventRouter(EventRouterConfig config) {
         this.eventPublisher = config.eventPublisher();
-        this.publisher = new EventRouterPublisher();
+        this.publisher = new EventRouterPublisher(config.publishExecutor());
         this.subscriber = new EventRouterSubscriber();
     }
 

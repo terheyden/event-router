@@ -20,18 +20,18 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public abstract class BaseThreadPoolTest {
 
-    public static final int THREADS = 3;
     private static final Logger LOG = getLogger(BaseThreadPoolTest.class);
 
     private EventRouter router;
-    private final List<Integer> results = Collections.synchronizedList(new ArrayList<>());
+    private List<Integer> results;
 
-    protected abstract EventRouter createEventRouter();
+    protected abstract EventRouterConfig getConfig();
 
     @BeforeEach
     public void beforeEach() {
 
-        router = createEventRouter();
+        router = new EventRouter(getConfig());
+        results = Collections.synchronizedList(new ArrayList<>());
 
         router.subscribe(Fruit.class, fruit -> results.add(1));
         router.subscribe(Fruit.class, fruit -> results.add(2));
@@ -96,31 +96,23 @@ public abstract class BaseThreadPoolTest {
     /**
      * Simple fruit record.
      */
-    private static final class Fruit {
+    static final class Fruit {
 
         private final String name;
 
-        public Fruit(String name) {
+        Fruit(String name) {
             this.name = name;
-        }
-
-        public String name() {
-            return name;
         }
     }
 
     /**
      * Simple vegetable record.
      */
-    private static final class Vegetable {
+    static final class Vegetable {
         private final String name;
 
-        public Vegetable(String name) {
+        Vegetable(String name) {
             this.name = name;
-        }
-
-        public String name() {
-            return name;
         }
     }
 }
