@@ -8,18 +8,14 @@ import org.slf4j.Logger;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * Handles publish and query requests.
+ * Handles publish requests.
+ * Publishing is always done asynchronously using a thread pool,
+ * so thread death is automatically taken care of.
  */
 class EventRouterPublisher {
 
     private static final Logger LOG = getLogger(EventRouterPublisher.class);
 
-    /**
-     * Blocking queue so threads will hang out until messages arrive.
-     * Threads in the middle of publishing should not interrupt themselves
-     * if, e.g., the running threads fires another event.
-     * Use: put() and take().
-     */
     private final ThreadPoolExecutor publishRequestExecutor;
 
     EventRouterPublisher(ThreadPoolExecutor publishRequestExecutor) {
@@ -38,15 +34,14 @@ class EventRouterPublisher {
         Queue<EventSubscription> subscribers = publishRequest.subscribers();
 
         if (subscribers.isEmpty()) {
+            LOG.trace("No subscribers for event: {}", publishRequest);
             handleNoSubscribersEvent(publishRequest);
             return;
         }
 
         Object event = publishRequest.event();
-        Class<?> eventType = publishRequest.eventType();
-        LOG.debug("Publishing event type '{}' to {} subscribers.", eventType, subscribers.size());
-
         EventPublisher publisher = publishRequest.eventPublisher();
+        LOG.trace("Dispatching event: {}", publishRequest);
         publisher.publish(event, subscribers);
     }
 
@@ -68,5 +63,12 @@ class EventRouterPublisher {
         EventRouter eventRouter = publishRequest.eventRouter();
         LOG.debug("No subscribers for event: {} ({})", eventType, event);
         eventRouter.publish(new NoSubscribersEvent(event, eventType));
+    }
+
+    /**
+     * Access to the publish pool, for metrics.
+     */
+    ThreadPoolExecutor getPublishRequestExecutor() {
+        return publishRequestExecutor;
     }
 }

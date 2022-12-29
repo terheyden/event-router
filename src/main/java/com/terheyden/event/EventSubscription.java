@@ -7,22 +7,22 @@ import io.vavr.CheckedConsumer;
 /**
  * EventSubscription class.
  */
-public final class EventSubscription {
+final class EventSubscription {
 
     private final UUID subscriptionId;
     private final CheckedConsumer<Object> eventHandler;
 
-    private EventSubscription(
+    @SuppressWarnings("unchecked")
+    EventSubscription(
         UUID subscriptionId,
-        CheckedConsumer<Object> eventHandler) {
+        CheckedConsumer<?> eventHandler) {
 
         this.subscriptionId = subscriptionId;
-        this.eventHandler = eventHandler;
+        this.eventHandler = (CheckedConsumer<Object>) eventHandler;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> EventSubscription createNew(CheckedConsumer<T> eventHandler) {
-        return new EventSubscription(UUID.randomUUID(), (CheckedConsumer<Object>) eventHandler);
+    EventSubscription(CheckedConsumer<?> eventHandler) {
+        this(UUID.randomUUID(), eventHandler);
     }
 
     public UUID getSubscriptionId() {

@@ -14,6 +14,13 @@ public class EventRouterConfig {
         return publishExecutor;
     }
 
+    /**
+     * Set the thread pool used to publish events.
+     * By default, a dynamically-scaling thread pool is used
+     * that scales between 0 and [CPU processors - 1] threads.
+     *
+     * @see ThreadPools#newDynamicThreadPool() for more info.
+     */
     public EventRouterConfig publishExecutor(ThreadPoolExecutor publishExecutor) {
         this.publishExecutor = publishExecutor;
         return this;

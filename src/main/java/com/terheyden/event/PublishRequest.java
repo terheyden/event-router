@@ -46,4 +46,13 @@ class PublishRequest {
     EventRouter eventRouter() {
         return eventRouter;
     }
+
+    @Override
+    public String toString() {
+        return String.format("PublishRequest [%s (%s)]; %d subs => %s",
+            eventType(),
+            event(),
+            subscribers().size(),
+            eventPublisher().getClass().getSimpleName());
+    }
 }

@@ -9,26 +9,26 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ThreadPools {
 
+    /**
+     * How long threads will remain idle before being terminated.
+     */
+    public static final int KEEP_ALIVE_SECS = 30;
+
     private ThreadPools() {
         // Private since this class shouldn't be instantiated.
     }
 
+    /**
+     * Create a new dynamic thread pool that will grow and shrink as needed,
+     * from 0 threads up to the specified max thread count.
+     * When idle, the pool will shrink back down to 0 threads.
+     */
     public static ThreadPoolExecutor newDynamicThreadPool(int maxThreadCount) {
 
-        // TPE has very complex behavior:
-        //   As events come in, core threads are created and used.
-        //   Once the queue is full, non-core threads are created and used.
-        //   Once the queue is empty, non-core threads are destroyed.
-        //   Core threads never die.
-        //   https://stackoverflow.com/questions/17659510/core-pool-size-vs-maximum-pool-size-in-threadpoolexecutor
-        //
-        // How we are using it:
-        //   Our queue is unbounded, so we want all threads to be core threads.
-        //   Additionally, we want core threads to be recycled when not in use.
         ThreadPoolExecutor pool = new ThreadPoolExecutor(
-            maxThreadCount,               // Core pool size is essentially our max pool size.
-            maxThreadCount,               // Max pool size is irrelevant since we use a LinkedBlockingQueue.
-            10,                           // Keep-alive time; 10 secs is an eternity re: thread creation.
+            maxThreadCount,               // We don't want core + extra threads, just always use core.
+            maxThreadCount,               // Core count and max count are the same.
+            KEEP_ALIVE_SECS,              // TPE prefers new threads until core count is reached.
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>()); // Queue is unbounded.
 
@@ -37,7 +37,12 @@ public final class ThreadPools {
         return pool;
     }
 
+    /**
+     * Create a new dynamic thread pool that will grow and shrink as needed,
+     * from 0 threads up to [CPU processors - 1] threads.
+     * When idle, the pool will shrink back down to 0 threads.
+     */
     public static ThreadPoolExecutor newDynamicThreadPool() {
-        return newDynamicThreadPool(Runtime.getRuntime().availableProcessors() / 2 + 1);
+        return newDynamicThreadPool(Runtime.getRuntime().availableProcessors() - 1);
     }
 }
