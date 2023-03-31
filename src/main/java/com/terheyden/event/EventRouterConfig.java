@@ -7,31 +7,36 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 public class EventRouterConfig {
 
-    private ThreadPoolExecutor publishExecutor = ThreadPools.newDynamicThreadPool();
-    private EventPublisher eventPublisher = new PerEventPublisher();
+    private ThreadPoolExecutor receivedEventHandlerThreadPool = ThreadPools.newDynamicThreadPool();
+    private SendEventToSubscriberStrategy sendEventToSubscriberStrategy = new SequentialSendStrategy();
 
-    public ThreadPoolExecutor publishExecutor() {
-        return publishExecutor;
+    public ThreadPoolExecutor receivedEventHandlerThreadPool() {
+        return receivedEventHandlerThreadPool;
     }
 
     /**
-     * Set the thread pool used to publish events.
+     * This is the thread pool that processes sendEventToSubscribers requests
+     * (it doesn't send events to subscribers).
+     * <p>
      * By default, a dynamically-scaling thread pool is used
      * that scales between 0 and [CPU processors - 1] threads.
      *
      * @see ThreadPools#newDynamicThreadPool() for more info.
      */
-    public EventRouterConfig publishExecutor(ThreadPoolExecutor publishExecutor) {
-        this.publishExecutor = publishExecutor;
+    public EventRouterConfig receivedEventHandlerThreadPool(ThreadPoolExecutor receivedEventHandlerThreadPool) {
+        this.receivedEventHandlerThreadPool = receivedEventHandlerThreadPool;
         return this;
     }
 
-    public EventPublisher eventPublisher() {
-        return eventPublisher;
+    public SendEventToSubscriberStrategy sendEventToSubscriberStrategy() {
+        return sendEventToSubscriberStrategy;
     }
 
-    public EventRouterConfig eventPublisher(EventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
+    /**
+     * This defines the strategy used to send events to subscribers.
+     */
+    public EventRouterConfig sendEventToSubscriberStrategy(SendEventToSubscriberStrategy sendEventToSubscriberStrategy) {
+        this.sendEventToSubscriberStrategy = sendEventToSubscriberStrategy;
         return this;
     }
 }

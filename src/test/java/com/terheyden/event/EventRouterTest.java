@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class EventRouterTest {
 
     private static final String HELLO = "hello";
-    public static final String IGNORE = "IGNORE";
 
     private EventRouter router;
     private ThreadPoolExecutor publishExecutor;
@@ -29,11 +28,11 @@ public class EventRouterTest {
     public void beforeEach() {
         EventRouterConfig config = new EventRouterConfig();
         router = new EventRouter(config);
-        publishExecutor = config.publishExecutor();
+        publishExecutor = config.receivedEventHandlerThreadPool();
     }
 
     @Test
-    @DisplayName("Base case — publish one event, subscribe to it, and receive it")
+    @DisplayName("Base case — sendEventToSubscribers one event, subscribe to it, and receive it")
     public void testBaseCase() {
 
         List<String> results = EventTester.publish(router, String.class, HELLO);
@@ -76,7 +75,7 @@ public class EventRouterTest {
             intVal -> {
                 // This should be called first since it's in-order.
                 assertTrue(counter.compareAndSet(0, intVal));
-                // This publish() happens while one is already in progress.
+                // This sendEventToSubscribers() happens while one is already in progress.
                 // If the interrupt were allowed to happen, the string event would fire
                 // right now before the second int event.
                 router.publish(String.valueOf(intVal));
@@ -86,7 +85,7 @@ public class EventRouterTest {
         router.subscribe(
             Integer.class,
             intVal -> {
-                // The in-process publish should call this before the String publish,
+                // The in-process sendEventToSubscribers should call this before the String sendEventToSubscribers,
                 // therefore the string ref should still be empty:
                 assertEquals("", stringEvents.get());
                 assertTrue(counter.compareAndSet(intVal, intVal + 1));
@@ -105,5 +104,10 @@ public class EventRouterTest {
 
         // Publish an Integer event to run all our tests.
         router.publish(1);
+    }
+
+    @Test
+    void testUnknownEventTypeReceived() {
+        router.publish(1L);
     }
 }

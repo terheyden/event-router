@@ -6,15 +6,15 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * EventRouterPublisherTest unit tests.
+ * ReceivedEventHandlerTest unit tests.
  */
-public class EventRouterPublisherTest {
+public class ReceivedEventHandlerTest {
 
-    private EventRouterPublisher publisher;
+    private ReceivedEventHandler publisher;
 
     @BeforeEach
     public void before() {
-        publisher = new EventRouterPublisher(ThreadPools.newDynamicThreadPool(1));
+        publisher = new ReceivedEventHandler(ThreadPools.newDynamicThreadPool(1));
     }
 
     @Test

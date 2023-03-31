@@ -12,28 +12,28 @@ import io.vavr.CheckedConsumer;
 public class EventRouter {
 
     /**
-     * Defines the direct publish strategy.
-     * Are messages sent directly (on the calling thread), multi-thread, in-order, etc.
+     * All "publish my event" requests are delegated to this class.
      */
-    private final EventPublisher eventPublisher;
+    private final ReceivedEventHandler receivedEventHandler;
 
     /**
-     * All publish and query requests are delegated to this class.
+     * This is the thing that sends events to subscribers.
+     * Are messages sent directly (on the calling thread), multi-thread, in-order, etc.
      */
-    private final EventRouterPublisher publisher;
+    private final SendEventToSubscriberStrategy sendEventToSubscriberStrategy;
 
     /**
      * Subscription delegate.
      */
-    private final EventRouterSubscriber subscriber;
+    private final EventSubscriberManager subscriberManager;
 
     /**
      * Create a new event router with the settings provided in the config object.
      */
     public EventRouter(EventRouterConfig config) {
-        this.eventPublisher = config.eventPublisher();
-        this.publisher = new EventRouterPublisher(config.publishExecutor());
-        this.subscriber = new EventRouterSubscriber();
+        this.receivedEventHandler = new ReceivedEventHandler(config.receivedEventHandlerThreadPool());
+        this.sendEventToSubscriberStrategy = config.sendEventToSubscriberStrategy();
+        this.subscriberManager = new EventSubscriberManager();
     }
 
     /**
@@ -51,7 +51,7 @@ public class EventRouter {
      * @return A UUID that can later be used to unsubscribe.
      */
     public <T> UUID subscribe(Class<T> eventType, CheckedConsumer<T> eventHandler) {
-        return subscriber.subscribe(eventType, eventHandler);
+        return subscriberManager.subscribe(eventType, eventHandler);
     }
 
     /**
@@ -61,44 +61,50 @@ public class EventRouter {
      * @return True if the subscription was found and removed.
      */
     public boolean unsubscribe(UUID subscriptionId) {
-        return subscriber.unsubscribe(subscriptionId);
+        return subscriberManager.unsubscribe(subscriptionId);
     }
 
     /**
      * Publish an event to all subscribers of the event object's type.
-     * For example, {@code publish("hello")} will call all subscribers of type {@code String.class}.
+     * For example, {@code sendEventToSubscribers("hello")} will call all subscribers of type {@code String.class}.
      *
-     * @param event     The event to publish.
+     * @param event     The event to sendEventToSubscribers.
      * @param eventType The event class type. It may be useful to specify this if this event object type
      *                  is a subclass of the subscribed event class type.
      */
     public void publish(Object event, Class<?> eventType) {
-        publishInternal(eventPublisher, event, eventType);
+        publishInternal(sendEventToSubscriberStrategy, event, eventType);
     }
 
     /**
      * Publish an event to all subscribers of the event object's type.
-     * For example, {@code publish("hello")} will call all subscribers of type {@code String.class}.
+     * For example, {@code sendEventToSubscribers("hello")} will call all subscribers of type {@code String.class}.
      *
-     * @param event The event to publish.
+     * @param event The event to sendEventToSubscribers.
      */
     public void publish(Object event) {
-        publishInternal(eventPublisher, event);
+        publishInternal(sendEventToSubscriberStrategy, event);
     }
 
-    private void publishInternal(EventPublisher publisher, Object event, Class<?> eventClass) {
+    private void publishInternal(SendEventToSubscriberStrategy publisher, Object event, Class<?> eventClass) {
 
         PublishRequest request = new PublishRequest(
             this,
             event,
             eventClass,
             publisher,
-            subscriber.findSubscribers(eventClass));
+            subscriberManager.findSubscribers(eventClass));
 
-        this.publisher.publish(request);
+        this.receivedEventHandler.publish(request);
     }
 
-    private void publishInternal(EventPublisher publisher, Object event) {
+    private void publishInternal(SendEventToSubscriberStrategy publisher, Object event) {
         publishInternal(publisher, event, event.getClass());
+    }
+
+    public String getMetrics() {
+        return String.format("Events Received (ReceivedEventHandler):\n%s\n\nSubscriber Deliveries (SendEventToSubscriberStrategy):\n%s",
+            EventUtils.threadReport(receivedEventHandler.getEventRequestExecutor()),
+            sendEventToSubscriberStrategy.getMetrics());
     }
 }

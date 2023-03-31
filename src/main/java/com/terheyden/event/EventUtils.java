@@ -47,11 +47,11 @@ import io.vavr.CheckedFunction1;
 
         StringBuilder bui = new StringBuilder();
 
-        bui.append("Pool size: ").append(pool.getPoolSize()).append('\n');
-        bui.append("Active count: ").append(pool.getActiveCount()).append('\n');
-        bui.append("Queue size: ").append(pool.getQueue().size()).append('\n');
-        bui.append("Task count: ").append(pool.getTaskCount()).append('\n');
-        bui.append("Completed task count: ").append(pool.getCompletedTaskCount()).append('\n');
+        bui.append("Pool thread size: ").append(pool.getPoolSize()).append('\n');
+        bui.append("Active thread count: ").append(pool.getActiveCount()).append('\n');
+        bui.append("Current queue size: ").append(pool.getQueue().size()).append('\n');
+        bui.append("Total tasks scheduled: ").append(pool.getTaskCount()).append('\n');
+        bui.append("Total completed tasks: ").append(pool.getCompletedTaskCount()).append('\n');
 
         return bui.toString();
     }

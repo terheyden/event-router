@@ -16,7 +16,7 @@ public class TutorialTest {
         // Let's subscribe to all String events.
         eventRouter.subscribe(String.class, str -> System.out.println("Received: " + str));
 
-        // Sweet, now let's publish our first event.
+        // Sweet, now let's sendEventToSubscribers our first event.
         eventRouter.publish("Hello, world!");
     }
 }

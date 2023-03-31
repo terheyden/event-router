@@ -10,20 +10,20 @@ class PublishRequest {
     private final EventRouter eventRouter;
     private final Object eventObj;
     private final Class<?> eventType;
-    private final EventPublisher eventPublisher;
+    private final SendEventToSubscriberStrategy sendEventToSubscriberStrategy;
     private final Queue<EventSubscription> subscribers;
 
     PublishRequest(
         EventRouter eventRouter,
         Object eventObj,
         Class<?> eventType,
-        EventPublisher eventPublisher,
+        SendEventToSubscriberStrategy sendEventToSubscriberStrategy,
         Queue<EventSubscription> subscribers) {
 
         this.eventRouter = eventRouter;
         this.eventType = eventType;
         this.eventObj = eventObj;
-        this.eventPublisher = eventPublisher;
+        this.sendEventToSubscriberStrategy = sendEventToSubscriberStrategy;
         this.subscribers = subscribers;
     }
 
@@ -35,8 +35,8 @@ class PublishRequest {
         return eventType;
     }
 
-    EventPublisher eventPublisher() {
-        return eventPublisher;
+    SendEventToSubscriberStrategy eventPublisher() {
+        return sendEventToSubscriberStrategy;
     }
 
     Queue<EventSubscription> subscribers() {

@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test;
 import static java.lang.System.out;
 
 /**
- * ThreadPerEventPublisherTest unit tests.
+ * SequentialSendStrategyTest unit tests.
  */
-public class ThreadPerEventPublisherTest extends BaseThreadPoolTest {
+public class SequentialSendStrategyTest extends BaseThreadPoolTest {
 
     @Test
     public void test() {

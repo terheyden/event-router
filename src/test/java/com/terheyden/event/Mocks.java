@@ -18,7 +18,7 @@ public final class Mocks {
 
     static EventRouterConfig eventRouterConfig() {
         return new EventRouterConfig()
-            .publishExecutor(ThreadPools.newDynamicThreadPool(1));
+            .receivedEventHandlerThreadPool(ThreadPools.newDynamicThreadPool(1));
     }
 
     static PublishRequest publishRequest(EventSubscription subscription, Object event) {
@@ -27,7 +27,7 @@ public final class Mocks {
             eventRouter(),
             event,
             event.getClass(),
-            new PerEventPublisher(),
+            new SequentialSendStrategy(),
             queue(subscription));
 
         return request;

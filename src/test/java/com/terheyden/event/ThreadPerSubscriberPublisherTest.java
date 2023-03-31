@@ -22,7 +22,7 @@ public class ThreadPerSubscriberPublisherTest extends BaseThreadPoolTest {
     @Override
     protected EventRouterConfig getConfig() {
         EventRouterConfig config = new EventRouterConfig();
-        config.eventPublisher(new PerSubscriberPublisher(config.publishExecutor()));
+        config.sendEventToSubscriberStrategy(new ThreadPoolSendStrategy(config.receivedEventHandlerThreadPool()));
         return config;
     }
 }

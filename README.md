@@ -28,15 +28,12 @@ and the cornerstone of cloud computing.
 ### EventRouter features
 
 * Tiny (6k), powerful, and easy to use
-
 * Fully custom thread support
   * Use our finely-tuned threadpools, or go ahead and supply your own `ExecutorService`
-
 * No annotations required
-  * No reflection, no classpath scanning, and less source code clutter
-  * Subscribers can self-register during construction
+  * No reflection, no classpath scanning, less source code clutter
+* Subscribers can self-register during object construction
   * Subscriptions are simply lambda functions (closures)
-
 * JDK 1.8+ compatible
   * If you're stuck using JDK 1.8, we've got you covered
 
@@ -55,10 +52,10 @@ and the cornerstone of cloud computing.
 // Let's make a simple event router.
 EventRouter eventRouter = new EventRouter();
 
-// Let's subscribe to all String events.
+// Let's subscribe to String events, and print them.
 eventRouter.subscribe(String.class, str -> System.out.println("Received: " + str));
 
-// Sweet, now let's publish our first event.
+// Sweet, now let's sendEventToSubscribers our first event.
 eventRouter.publish("Hello, world!");
 ```
 

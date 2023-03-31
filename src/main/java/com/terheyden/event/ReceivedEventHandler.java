@@ -8,26 +8,29 @@ import org.slf4j.Logger;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * Handles publish requests.
+ * Handles incoming "sendEventToSubscribers my event" requests.
  * Publishing is always done asynchronously using a thread pool,
  * so thread death is automatically taken care of.
  */
-class EventRouterPublisher {
+class ReceivedEventHandler {
 
-    private static final Logger LOG = getLogger(EventRouterPublisher.class);
+    private static final Logger LOG = getLogger(ReceivedEventHandler.class);
 
-    private final ThreadPoolExecutor publishRequestExecutor;
+    private final ThreadPoolExecutor eventRequestExecutor;
 
-    EventRouterPublisher(ThreadPoolExecutor publishRequestExecutor) {
-        this.publishRequestExecutor = publishRequestExecutor;
-    }
-
-    void publish(PublishRequest publishRequest) {
-        publishRequestExecutor.execute(() -> processPublishRequest(publishRequest));
+    ReceivedEventHandler(ThreadPoolExecutor eventRequestExecutor) {
+        this.eventRequestExecutor = eventRequestExecutor;
     }
 
     /**
-     * Deliver the given publish request to subscribers.
+     * Our main entry point — the user calls EventRouter.sendEventToSubscribers() and EventRouter calls this.
+     */
+    void publish(PublishRequest publishRequest) {
+        eventRequestExecutor.execute(() -> processPublishRequest(publishRequest));
+    }
+
+    /**
+     * Deliver the given sendEventToSubscribers request to subscribers.
      */
     private static void processPublishRequest(PublishRequest publishRequest) {
 
@@ -40,9 +43,9 @@ class EventRouterPublisher {
         }
 
         Object event = publishRequest.event();
-        EventPublisher publisher = publishRequest.eventPublisher();
+        SendEventToSubscriberStrategy sendStrategy = publishRequest.eventPublisher();
         LOG.trace("Dispatching event: {}", publishRequest);
-        publisher.publish(event, subscribers);
+        sendStrategy.sendEventToSubscribers(event, subscribers);
     }
 
     /**
@@ -66,9 +69,9 @@ class EventRouterPublisher {
     }
 
     /**
-     * Access to the publish pool, for metrics.
+     * Access to the sendEventToSubscribers pool, for metrics.
      */
-    ThreadPoolExecutor getPublishRequestExecutor() {
-        return publishRequestExecutor;
+    ThreadPoolExecutor getEventRequestExecutor() {
+        return eventRequestExecutor;
     }
 }

@@ -6,11 +6,9 @@ import java.util.UUID;
 import io.vavr.CheckedConsumer;
 
 /**
- * EventRouter class.
- * Not static, so you can have multiple event routers.
- * You can always make it static if they want.
+ * Manages event subscriptions.
  */
-class EventRouterSubscriber {
+class EventSubscriberManager {
 
     /**
      * {@code [ Event.class : [ sub1, sub2, ... ] ]}.

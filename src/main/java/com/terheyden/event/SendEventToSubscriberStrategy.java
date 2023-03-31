@@ -11,10 +11,10 @@ import java.util.Queue;
  * depending on the event type and/or the event publisher (e.g. direct reacts
  * very differently than a threadpool).
  */
-public interface EventPublisher {
+public interface SendEventToSubscriberStrategy {
 
     /**
-     * A publish request has been made. This publisher should use its preferred strategy
+     * A sendEventToSubscribers request has been made. This publisher should use its preferred strategy
      * to deliver the event to the subscribers. The list of subscribers is FIFO according to
      * the order in which they were subscribed (not that the publisher needs to obey that
      * depending on the strategy, but it could).
@@ -22,5 +22,7 @@ public interface EventPublisher {
      * @param event       The event to deliver to each {@link EventSubscription}.
      * @param subscribers The concurrent collection of subscribers to deliver the event to, guaranteed to be non-empty.
      */
-    void publish(Object event, Queue<EventSubscription> subscribers);
+    void sendEventToSubscribers(Object event, Queue<EventSubscription> subscribers);
+
+    String getMetrics();
 }
