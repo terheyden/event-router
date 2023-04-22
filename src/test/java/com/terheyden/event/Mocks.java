@@ -13,12 +13,7 @@ public final class Mocks {
     }
 
     static EventRouter eventRouter() {
-        return new EventRouter(eventRouterConfig());
-    }
-
-    static EventRouterConfig eventRouterConfig() {
-        return new EventRouterConfig()
-            .receivedEventHandlerThreadPool(ThreadPools.newDynamicThreadPool(1));
+        return new EventRouter(1);
     }
 
     static PublishRequest publishRequest(EventSubscription subscription, Object event) {

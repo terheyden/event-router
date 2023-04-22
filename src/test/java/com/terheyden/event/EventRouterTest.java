@@ -2,7 +2,6 @@ package com.terheyden.event;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -10,38 +9,38 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.terheyden.event.EventTester.awaitEmpty;
+import static com.terheyden.event.EventTester.publish;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.valueOf;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
  * EventRouterTest unit tests.
  */
-public class EventRouterTest {
+class EventRouterTest {
 
     private static final String HELLO = "hello";
 
     private EventRouter router;
-    private ThreadPoolExecutor publishExecutor;
 
     @BeforeEach
-    public void beforeEach() {
-        EventRouterConfig config = new EventRouterConfig();
-        router = new EventRouter(config);
-        publishExecutor = config.receivedEventHandlerThreadPool();
+    void beforeEach() {
+        router = new EventRouter();
     }
 
     @Test
     @DisplayName("Base case — sendEventToSubscribers one event, subscribe to it, and receive it")
-    public void testBaseCase() {
+    void testBaseCase() {
 
-        List<String> results = EventTester.publish(router, String.class, HELLO);
-        assertEquals(1, results.size());
-        assertEquals(HELLO, results.get(0));
+        List<String> results = publish(router, String.class, HELLO);
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0)).isEqualTo(HELLO);
     }
 
     @Test
-    public void testUnsubscribe() {
+    void testUnsubscribe() {
 
         AtomicInteger counter = new AtomicInteger(0);
 
@@ -50,20 +49,20 @@ public class EventRouterTest {
             e -> counter.incrementAndGet());
 
         router.publish(HELLO);
-        EventTester.awaitEmpty(publishExecutor);
+        awaitEmpty(router);
 
-        assertTrue(router.unsubscribe(subscriptionId));
-        assertFalse(router.unsubscribe(subscriptionId));
+        assertThat(router.unsubscribe(subscriptionId)).isTrue();
+        assertThat(router.unsubscribe(subscriptionId)).isFalse();
 
         router.publish(HELLO);
-        EventTester.awaitEmpty(publishExecutor);
+        awaitEmpty(router);
 
         // Should only have been called once.
-        assertEquals(1, counter.get());
+        assertThat(counter.get()).isEqualTo(1);
     }
 
     @Test
-    public void testEventInterrupts() {
+    void testEventInterrupts() {
 
         // We'll fire an int event, then a string event will happen in the middle of it.
         AtomicInteger counter = new AtomicInteger(0);
@@ -74,11 +73,11 @@ public class EventRouterTest {
             Integer.class,
             intVal -> {
                 // This should be called first since it's in-order.
-                assertTrue(counter.compareAndSet(0, intVal));
+                assertThat(counter.compareAndSet(0, intVal)).isTrue();
                 // This sendEventToSubscribers() happens while one is already in progress.
                 // If the interrupt were allowed to happen, the string event would fire
                 // right now before the second int event.
-                router.publish(String.valueOf(intVal));
+                router.publish(valueOf(intVal));
             });
 
         // Int event 2:
@@ -87,8 +86,8 @@ public class EventRouterTest {
             intVal -> {
                 // The in-process sendEventToSubscribers should call this before the String sendEventToSubscribers,
                 // therefore the string ref should still be empty:
-                assertEquals("", stringEvents.get());
-                assertTrue(counter.compareAndSet(intVal, intVal + 1));
+                assertThat(stringEvents.get()).isEmpty();
+                assertThat(counter.compareAndSet(intVal, intVal + 1)).isTrue();
             });
 
         // On String event, set our stringEvents ref.
@@ -98,8 +97,8 @@ public class EventRouterTest {
                 // Update our string ref.
                 stringEvents.compareAndSet("", str);
                 // Verify the second int event happened first.
-                int intVal = Integer.parseInt(str);
-                assertEquals(intVal + 1, counter.get());
+                int intVal = parseInt(str);
+                assertThat(counter.get()).isEqualTo(intVal + 1);
             });
 
         // Publish an Integer event to run all our tests.
@@ -108,6 +107,22 @@ public class EventRouterTest {
 
     @Test
     void testUnknownEventTypeReceived() {
-        router.publish(1L);
+        assertThatNoException().isThrownBy(() -> router.publish(1L));
+    }
+
+    @Test
+    void testNoSubscribersEvent() {
+        // Special event if no subscribers.
+    }
+
+    @Test
+    void testSubscriberException() {
+        // Special event if subscriber throws.
+        // Should not interrupt other subscribers.
+    }
+
+    @Test
+    void testPublishSubclassEventObject() {
+        // Should be able to publish a subclass of the event type.
     }
 }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import org.slf4j.Logger;
 
@@ -50,8 +49,8 @@ public final class EventTester {
         throw new RuntimeException("Exception while processing event: " + event);
     }
 
-    public static void awaitEmpty(ThreadPoolExecutor pool) {
-        while (pool.getActiveCount() > 0) {
+    public static void awaitEmpty(EventRouter eventRouter) {
+        while (eventRouter.getThreadPoolExecutor().getActiveCount() > 0) {
             TestUtils.sleep(100);
         }
     }

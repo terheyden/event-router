@@ -8,29 +8,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import io.vavr.CheckedRunnable;
-import io.vavr.control.Try;
 
+import static java.lang.System.out;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * BaseThreadPoolTest unit tests.
+ * ThreadPoolTest unit tests.
  */
-public abstract class BaseThreadPoolTest {
+public class ThreadPoolTest {
 
-    private static final Logger LOG = getLogger(BaseThreadPoolTest.class);
+    private static final Logger LOG = getLogger(ThreadPoolTest.class);
 
     private EventRouter router;
     private List<Integer> results;
 
-    protected abstract EventRouterConfig getConfig();
-
     @BeforeEach
     public void beforeEach() {
 
-        router = new EventRouter(getConfig());
+        router = new EventRouter();
         results = Collections.synchronizedList(new ArrayList<>());
 
         router.subscribe(Fruit.class, fruit -> results.add(1));
@@ -51,7 +50,7 @@ public abstract class BaseThreadPoolTest {
             () -> router.publish(new Vegetable("broccoli")));
 
         // Wait for all events to be delivered.
-        sleep(500);
+        EventUtils.sleep(500);
     }
 
     /**
@@ -82,15 +81,16 @@ public abstract class BaseThreadPoolTest {
         }
     }
 
-    /**
-     * Helper method to sleep peacefully.
-     */
-    private static void sleep(int millis) {
-        Try.run(() -> Thread.sleep(millis));
-    }
-
     public List<Integer> getResults() {
         return results;
+    }
+
+    @Test
+    public void test() {
+
+        List<Integer> results = getResults();
+        // The results should be sporadic.
+        out.println(results);
     }
 
     /**

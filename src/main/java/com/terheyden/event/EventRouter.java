@@ -1,6 +1,7 @@
 package com.terheyden.event;
 
 import java.util.UUID;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import io.vavr.CheckedConsumer;
 
@@ -10,6 +11,8 @@ import io.vavr.CheckedConsumer;
  * You can always make it static if they want.
  */
 public class EventRouter {
+
+    public static final int DEFAULT_THREADPOOL_SIZE = 100;
 
     /**
      * All "publish my event" requests are delegated to this class.
@@ -28,19 +31,32 @@ public class EventRouter {
     private final EventSubscriberManager subscriberManager;
 
     /**
-     * Create a new event router with the settings provided in the config object.
+     * The singular thread pool used by all components.
      */
-    public EventRouter(EventRouterConfig config) {
-        this.receivedEventHandler = new ReceivedEventHandler(config.receivedEventHandlerThreadPool());
-        this.sendEventToSubscriberStrategy = config.sendEventToSubscriberStrategy();
+    private final ThreadPoolExecutor threadPoolExecutor;
+
+    /**
+     * Create a new event router with a custom thread pool.
+     */
+    public EventRouter(ThreadPoolExecutor threadPoolExecutor) {
+        this.receivedEventHandler = new ReceivedEventHandler(threadPoolExecutor);
+        this.sendEventToSubscriberStrategy = new ThreadPoolSendStrategy(threadPoolExecutor);
         this.subscriberManager = new EventSubscriberManager();
+        this.threadPoolExecutor = threadPoolExecutor;
     }
 
     /**
-     * Uses default config with direct publishing (uses calling thread) to create a new event router.
+     * Create a new event router with a dynamic thread pool of the given size.
+     */
+    public EventRouter(int threadPoolSize) {
+        this(ThreadPools.newDynamicThreadPool(threadPoolSize));
+    }
+
+    /**
+     * Create a new event router with a dynamic thread pool of the default size ({@link #DEFAULT_THREADPOOL_SIZE}).
      */
     public EventRouter() {
-        this(new EventRouterConfig());
+        this(DEFAULT_THREADPOOL_SIZE);
     }
 
     /**
@@ -65,22 +81,28 @@ public class EventRouter {
     }
 
     /**
-     * Publish an event to all subscribers of the event object's type.
-     * For example, {@code sendEventToSubscribers("hello")} will call all subscribers of type {@code String.class}.
+     * Publish the given event to all subscribers of the event object's type.
+     * This is a non-blocking call; events are always published asynchronously.
+     * <p>
+     * Example:
+     * <pre>
+     * {@code
+     * // Subscribe to all String events:
+     * eventRouter.subscribe(String.class, System.out::println);
+     * // Publish a String event:
+     * eventRouter.publish("Hello World!");
+     * }
+     * </pre>
+     * Remember that if you're publishing a subclass of an event type,
+     * you'll need to cast it to the correct type:
+     * <pre>
+     * {@code
+     * eventRouter.subscribe(MainClass.class, this::handleMainClass);
+     * eventRouter.publish((MainClass) subClassObj);
+     * }
+     * </pre>
      *
-     * @param event     The event to sendEventToSubscribers.
-     * @param eventType The event class type. It may be useful to specify this if this event object type
-     *                  is a subclass of the subscribed event class type.
-     */
-    public void publish(Object event, Class<?> eventType) {
-        publishInternal(sendEventToSubscriberStrategy, event, eventType);
-    }
-
-    /**
-     * Publish an event to all subscribers of the event object's type.
-     * For example, {@code sendEventToSubscribers("hello")} will call all subscribers of type {@code String.class}.
-     *
-     * @param event The event to sendEventToSubscribers.
+     * @param event The event to send to all subscribers
      */
     public void publish(Object event) {
         publishInternal(sendEventToSubscriberStrategy, event);
@@ -95,16 +117,18 @@ public class EventRouter {
             publisher,
             subscriberManager.findSubscribers(eventClass));
 
-        this.receivedEventHandler.publish(request);
+        receivedEventHandler.publish(request);
     }
 
     private void publishInternal(SendEventToSubscriberStrategy publisher, Object event) {
         publishInternal(publisher, event, event.getClass());
     }
 
-    public String getMetrics() {
-        return String.format("Events Received (ReceivedEventHandler):\n%s\n\nSubscriber Deliveries (SendEventToSubscriberStrategy):\n%s",
-            EventUtils.threadReport(receivedEventHandler.getEventRequestExecutor()),
-            sendEventToSubscriberStrategy.getMetrics());
+    /**
+     * The singular thread pool used by all components in this event router.
+     * For metrics only — don't use this to publish events.
+     */
+    public ThreadPoolExecutor getThreadPoolExecutor() {
+        return threadPoolExecutor;
     }
 }

@@ -67,11 +67,4 @@ class ReceivedEventHandler {
         LOG.debug("No subscribers for event: {} ({})", eventType, event);
         eventRouter.publish(new NoSubscribersEvent(event, eventType));
     }
-
-    /**
-     * Access to the sendEventToSubscribers pool, for metrics.
-     */
-    ThreadPoolExecutor getEventRequestExecutor() {
-        return eventRequestExecutor;
-    }
 }

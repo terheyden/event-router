@@ -7,7 +7,9 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 public class EventRouterConfig {
 
-    private ThreadPoolExecutor receivedEventHandlerThreadPool = ThreadPools.newDynamicThreadPool();
+    public static final int DEFAULT_THREADPOOL_SIZE = 100;
+
+    private ThreadPoolExecutor receivedEventHandlerThreadPool = ThreadPools.newDynamicThreadPool(DEFAULT_THREADPOOL_SIZE);
     private SendEventToSubscriberStrategy sendEventToSubscriberStrategy = new SequentialSendStrategy();
 
     public ThreadPoolExecutor receivedEventHandlerThreadPool() {
