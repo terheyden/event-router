@@ -30,7 +30,7 @@ public final class ThreadPools {
             maxThreadCount,               // Core count and max count are the same.
             KEEP_ALIVE_SECS,              // TPE prefers new threads until core count is reached.
             TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>()); // Queue is unbounded.
+            new LinkedBlockingQueue<>()); // Queue is unbounded so no messages are lost.
 
         // By default, the core threads will never get recycled, so we need to set this.
         pool.allowCoreThreadTimeOut(true);

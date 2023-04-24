@@ -27,7 +27,8 @@ class EventRouterLoadTest {
     @Disabled
     void testDefaultConfigForCPU() throws InterruptedException {
         int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
-        runLoadTest(new EventRouter(), simulatedWorkDelayMs);
+        int numberOfEvents = 50_000;
+        runLoadTest(new EventRouter(), numberOfEvents, simulatedWorkDelayMs);
     }
 
     /**
@@ -37,7 +38,8 @@ class EventRouterLoadTest {
     @Disabled
     void testDefaultConfigForIO() throws InterruptedException {
         int simulatedWorkDelayMs = 3; // Let's say each task takes 3ms to complete.
-        runLoadTest(new EventRouter(), simulatedWorkDelayMs);
+        int numberOfEvents = 10_000;
+        runLoadTest(new EventRouter(), numberOfEvents, simulatedWorkDelayMs);
     }
 
     /**
@@ -49,16 +51,17 @@ class EventRouterLoadTest {
 
         int simulatedWorkDelayMs = 3; // Let's say each task takes 3ms to complete.
         int threadPoolSize = 1000;    // For large IO-bound systems we recommend around 1000 threads.
+        int numberOfEvents = 10_000;
 
         EventRouter eventRouter = new EventRouter(threadPoolSize);
-        runLoadTest(eventRouter, simulatedWorkDelayMs);
+        runLoadTest(eventRouter, numberOfEvents, simulatedWorkDelayMs);
     }
 
-    private void runLoadTest(EventRouter eventRouter, int eventDelayMs) throws InterruptedException {
+    private void runLoadTest(EventRouter eventRouter, int eventCount, int eventDelayMs) throws InterruptedException {
 
         // Let's see how fast we can chew through these events.
-        // The number delivered is: eventCount * subscriberCount.
-        int eventCount = 10_000;
+        // The number delivered is: eventCount * subscriberCount. 950k / sec.
+        //
         // Most events would have maybe a handful of subscribers... we'll use 100.
         int subscriberCount = 100;
         // We'll use a CountDownLatch to wait for all subscribers to finish.
