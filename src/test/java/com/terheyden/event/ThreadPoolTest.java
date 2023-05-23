@@ -29,7 +29,7 @@ public class ThreadPoolTest {
     @BeforeEach
     public void beforeEach() {
 
-        router = new EventRouter();
+        router = new EventRouterImpl();
         results = Collections.synchronizedList(new ArrayList<>());
 
         router.subscribe(Fruit.class, fruit -> results.add(1));

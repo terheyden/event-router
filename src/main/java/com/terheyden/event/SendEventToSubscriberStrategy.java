@@ -1,6 +1,6 @@
 package com.terheyden.event;
 
-import java.util.Queue;
+import java.util.Collection;
 
 /**
  * Strategies for delivering events.
@@ -11,7 +11,7 @@ import java.util.Queue;
  * depending on the event type and/or the event publisher (e.g. direct reacts
  * very differently than a threadpool).
  */
-public interface SendEventToSubscriberStrategy {
+public interface SendEventToSubscriberStrategy<T> {
 
     /**
      * A sendEventToSubscribers request has been made. This publisher should use its preferred strategy
@@ -22,7 +22,7 @@ public interface SendEventToSubscriberStrategy {
      * @param event       The event to deliver to each {@link EventSubscription}.
      * @param subscribers The concurrent collection of subscribers to deliver the event to, guaranteed to be non-empty.
      */
-    void sendEventToSubscribers(Object event, Queue<EventSubscription> subscribers);
+    void sendEventToSubscribers(T event, Collection<EventSubscription<T>> subscribers);
 
     String getMetrics();
 }

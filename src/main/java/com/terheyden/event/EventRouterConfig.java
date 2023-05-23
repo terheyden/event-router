@@ -3,7 +3,7 @@ package com.terheyden.event;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * Used to configure a new {@link EventRouter}.
+ * Used to configure a new {@link EventRouterImpl}.
  */
 public class EventRouterConfig {
 

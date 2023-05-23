@@ -20,13 +20,13 @@ public final class EventTester {
         // Private since this class shouldn't be instantiated.
     }
 
-    public static <T> List<T> publish(EventRouter router, Class<T> eventClass, T... events) {
+    public static <T> List<T> publish(EventRouter<T> router, T... events) {
         try {
 
             List<T> outputs = Collections.synchronizedList(new ArrayList<>(events.length));
             CountDownLatch outputLatch = new CountDownLatch(events.length);
 
-            router.subscribe(eventClass, item -> {
+            router.subscribe(item -> {
                 outputs.add(item);
                 outputLatch.countDown();
                 LOG.debug("Got event: {} ({} left)", item, outputLatch.getCount());
@@ -49,7 +49,7 @@ public final class EventTester {
         throw new RuntimeException("Exception while processing event: " + event);
     }
 
-    public static void awaitEmpty(EventRouter eventRouter) {
+    public static <T> void awaitEmpty(EventRouterImpl<T> eventRouter) {
         while (eventRouter.getThreadPoolExecutor().getActiveCount() > 0) {
             TestUtils.sleep(100);
         }

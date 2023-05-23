@@ -1,20 +1,14 @@
 package com.terheyden.event;
 
-import java.util.Queue;
-
-import org.slf4j.Logger;
-
-import static org.slf4j.LoggerFactory.getLogger;
+import java.util.Collection;
 
 /**
  * Publishes events to subscribers in order, on the calling thread.
  */
-public class SequentialSendStrategy implements SendEventToSubscriberStrategy {
-
-    private static final Logger LOG = getLogger(SequentialSendStrategy.class);
+public class SequentialSendStrategy<T> implements SendEventToSubscriberStrategy<T> {
 
     @Override
-    public void sendEventToSubscribers(Object event, Queue<EventSubscription> subscribers) {
+    public void sendEventToSubscribers(T event, Collection<EventSubscription<T>> subscribers) {
 
         subscribers.forEach(sub ->
             sub.getEventHandler().unchecked().accept(event));

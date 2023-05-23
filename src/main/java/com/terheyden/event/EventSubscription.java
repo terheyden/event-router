@@ -8,21 +8,20 @@ import io.vavr.CheckedConsumer;
  * Used by {@link EventSubscriberMap} to store a subscription.
  * Has a UUID to identify it, and the handler to apply to incoming event objects.
  */
-final class EventSubscription {
+final class EventSubscription<T> {
 
     private final UUID subscriptionId;
-    private final CheckedConsumer<Object> eventHandler;
+    private final CheckedConsumer<T> eventHandler;
 
-    @SuppressWarnings("unchecked")
     EventSubscription(
         UUID subscriptionId,
-        CheckedConsumer<?> eventHandler) {
+        CheckedConsumer<T> eventHandler) {
 
         this.subscriptionId = subscriptionId;
-        this.eventHandler = (CheckedConsumer<Object>) eventHandler;
+        this.eventHandler = eventHandler;
     }
 
-    EventSubscription(CheckedConsumer<?> eventHandler) {
+    EventSubscription(CheckedConsumer<T> eventHandler) {
         this(UUID.randomUUID(), eventHandler);
     }
 
@@ -30,7 +29,7 @@ final class EventSubscription {
         return subscriptionId;
     }
 
-    public CheckedConsumer<Object> getEventHandler() {
+    public CheckedConsumer<T> getEventHandler() {
         return eventHandler;
     }
 }

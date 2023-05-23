@@ -1,13 +1,13 @@
 package com.terheyden.event;
 
-import java.util.Queue;
+import java.util.Collection;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * If event {@code MyEvent} is published and there are 3 subscribers,
  * then 3 sendEventToSubscribers tasks are created and run on the thread pool in this publisher.
  */
-public class ThreadPoolSendStrategy implements SendEventToSubscriberStrategy {
+public class ThreadPoolSendStrategy<T> implements SendEventToSubscriberStrategy<T> {
 
     private final ThreadPoolExecutor threadpool;
 
@@ -16,7 +16,7 @@ public class ThreadPoolSendStrategy implements SendEventToSubscriberStrategy {
     }
 
     @Override
-    public void sendEventToSubscribers(Object event, Queue<EventSubscription> subscribers) {
+    public void sendEventToSubscribers(T event, Collection<EventSubscription<T>> subscribers) {
         subscribers.forEach(sub ->
             threadpool.execute(() ->
                 sub.getEventHandler().unchecked().accept(event)));

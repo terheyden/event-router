@@ -13,7 +13,7 @@ public final class Mocks {
     }
 
     static EventRouter eventRouter() {
-        return new EventRouter(1);
+        return new EventRouterImpl(1);
     }
 
     static PublishRequest publishRequest(EventSubscription subscription, Object event) {
@@ -21,7 +21,6 @@ public final class Mocks {
         PublishRequest request = new PublishRequest(
             eventRouter(),
             event,
-            event.getClass(),
             new SequentialSendStrategy(),
             queue(subscription));
 

@@ -1,56 +1,48 @@
 package com.terheyden.event;
 
-import java.util.Queue;
+import java.util.Collection;
 
 /**
  * Combines an event obj with an event key, for queuing and delivery.
  */
-class PublishRequest {
+class PublishRequest<T> {
 
-    private final EventRouter eventRouter;
-    private final Object eventObj;
-    private final Class<?> eventType;
-    private final SendEventToSubscriberStrategy sendEventToSubscriberStrategy;
-    private final Queue<EventSubscription> subscribers;
+    private final EventRouter<T> eventRouter;
+    private final T eventObj;
+    private final SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy;
+    private final Collection<EventSubscription<T>> subscribers;
 
     PublishRequest(
-        EventRouter eventRouter,
-        Object eventObj,
-        Class<?> eventType,
-        SendEventToSubscriberStrategy sendEventToSubscriberStrategy,
-        Queue<EventSubscription> subscribers) {
+        EventRouter<T> eventRouter,
+        T eventObj,
+        SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy,
+        Collection<EventSubscription<T>> subscribers) {
 
         this.eventRouter = eventRouter;
-        this.eventType = eventType;
         this.eventObj = eventObj;
         this.sendEventToSubscriberStrategy = sendEventToSubscriberStrategy;
         this.subscribers = subscribers;
     }
 
-    Object event() {
+    T event() {
         return eventObj;
     }
 
-    Class<?> eventType() {
-        return eventType;
-    }
-
-    SendEventToSubscriberStrategy eventPublisher() {
+    SendEventToSubscriberStrategy<T> eventPublisher() {
         return sendEventToSubscriberStrategy;
     }
 
-    Queue<EventSubscription> subscribers() {
+    Collection<EventSubscription<T>> subscribers() {
         return subscribers;
     }
 
-    EventRouter eventRouter() {
+    EventRouter<T> eventRouter() {
         return eventRouter;
     }
 
     @Override
     public String toString() {
         return String.format("PublishRequest [%s (%s)]; %d subs => %s",
-            eventType(),
             event(),
             subscribers().size(),
             eventPublisher().getClass().getSimpleName());
