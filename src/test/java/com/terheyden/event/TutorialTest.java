@@ -11,10 +11,10 @@ public class TutorialTest {
     public void tutorial1() {
 
         // Let's make a simple event router.
-        EventRouter eventRouter = new EventRouterImpl();
+        EventRouter<String> eventRouter = new EventRouterImpl<String>();
 
         // Let's subscribe to all String events.
-        eventRouter.subscribe(String.class, str -> System.out.println("Received: " + str));
+        eventRouter.subscribe(str -> System.out.println("Received: " + str));
 
         // Sweet, now let's sendEventToSubscribers our first event.
         eventRouter.publish("Hello, world!");

@@ -14,18 +14,18 @@ import io.vavr.CheckedConsumer;
 public class EventRouterImpl<T> implements EventRouter<T> {
 
     /**
-     * All "publish my event" requests are delegated to this class.
+     * All "publish this event" requests are delegated to this class.
      */
     private final ReceivedEventHandler<T> receivedEventHandler;
 
     /**
-     * This is the thing that sends events to subscribers.
-     * Are messages sent directly (on the calling thread), multi-thread, in-order, etc.
+     * Send events to subscribers.
+     * Decides if messages sent directly (on the calling thread), multi-thread, in-order, etc.
      */
     private final SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy;
 
     /**
-     * Subscription delegate.
+     * Manages event subscriptions.
      */
     private final EventSubscriberManager<T> subscriberManager;
 
@@ -38,9 +38,9 @@ public class EventRouterImpl<T> implements EventRouter<T> {
      * Create a new event router with a custom thread pool.
      */
     public EventRouterImpl(ThreadPoolExecutor threadPoolExecutor) {
-        this.receivedEventHandler = new ReceivedEventHandler(threadPoolExecutor);
-        this.sendEventToSubscriberStrategy = new ThreadPoolSendStrategy(threadPoolExecutor);
-        this.subscriberManager = new EventSubscriberManager();
+        this.receivedEventHandler = new ReceivedEventHandler<>(threadPoolExecutor);
+        this.sendEventToSubscriberStrategy = new ThreadPoolSendStrategy<>(threadPoolExecutor);
+        this.subscriberManager = new EventSubscriberManager<>();
         this.threadPoolExecutor = threadPoolExecutor;
     }
 

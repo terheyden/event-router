@@ -23,31 +23,29 @@ public class ThreadPoolTest {
 
     private static final Logger LOG = getLogger(ThreadPoolTest.class);
 
-    private EventRouter router;
+    private EventRouter<Fruit> router;
     private List<Integer> results;
 
     @BeforeEach
     public void beforeEach() {
 
-        router = new EventRouterImpl();
+        router = new EventRouterImpl<>();
         results = Collections.synchronizedList(new ArrayList<>());
 
-        router.subscribe(Fruit.class, fruit -> results.add(1));
-        router.subscribe(Fruit.class, fruit -> results.add(2));
-        router.subscribe(Fruit.class, fruit -> results.add(3));
-        router.subscribe(Fruit.class, fruit -> results.add(4));
-        router.subscribe(Vegetable.class, veg -> results.add(5));
-        router.subscribe(Vegetable.class, veg -> results.add(6));
-        router.subscribe(Vegetable.class, veg -> results.add(7));
-        router.subscribe(Vegetable.class, veg -> results.add(8));
+        router.subscribe(fruit -> results.add(1));
+        router.subscribe(fruit -> results.add(2));
+        router.subscribe(fruit -> results.add(3));
+        router.subscribe(fruit -> results.add(4));
+        router.subscribe(veg -> results.add(5));
+        router.subscribe(veg -> results.add(6));
+        router.subscribe(veg -> results.add(7));
+        router.subscribe(veg -> results.add(8));
 
         // This will hammer the router with events.
         // It returns after every event has been published (not delivered).
         runConcurrently(
             () -> router.publish(new Fruit("apple")),
-            () -> router.publish(new Vegetable("carrot")),
-            () -> router.publish(new Fruit("banana")),
-            () -> router.publish(new Vegetable("broccoli")));
+            () -> router.publish(new Fruit("banana")));
 
         // Wait for all events to be delivered.
         EventUtils.sleep(500);

@@ -13,7 +13,7 @@ public final class Mocks {
     }
 
     static EventRouter eventRouter() {
-        return new EventRouterImpl(1);
+        return new EventRouterImpl<>(1);
     }
 
     static PublishRequest publishRequest(EventSubscription subscription, Object event) {

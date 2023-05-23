@@ -1,13 +1,16 @@
 package com.terheyden.event;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static com.terheyden.event.TestUtils.sleep;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
  * ThreadTest class.
@@ -15,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 public class ThreadTest {
 
     @Test
+    @DisplayName("When a single thread dies, there is no recovery")
     public void testSingleThreadDeath() {
 
         Thread singleThread = new Thread(() -> {
@@ -24,19 +28,21 @@ public class ThreadTest {
 
         singleThread.start();
         sleep(200);
-        assertFalse(singleThread.isAlive());
+        assertThat(singleThread.isAlive()).isFalse();
     }
 
     @Test
+    @DisplayName("When a pool thread dies, it is replaced")
     public void testPoolDeath() {
 
         ExecutorService pool = Executors.newSingleThreadExecutor();
+        CountDownLatch latch = new CountDownLatch(10);
 
         IntStream.range(0, 10).forEach(num -> pool.execute(() -> {
-            sleep(100);
-            throw new IllegalStateException("Time for this pool thread to die.");
+            latch.countDown();
+            throw new IllegalStateException("IGNORE: counting down: " + num);
         }));
 
-        sleep(500);
+        assertThatNoException().isThrownBy(latch::await);
     }
 }
