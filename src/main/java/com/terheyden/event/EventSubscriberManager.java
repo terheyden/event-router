@@ -6,12 +6,10 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import io.vavr.CheckedConsumer;
-
 /**
  * Manages event subscriptions.
  */
-class EventSubscriberManager<T> {
+class EventSubscriberManager {
 
     /**
      * Map of {@code [ event : [ sub1, sub2, ... ] ]}.
@@ -19,13 +17,11 @@ class EventSubscriberManager<T> {
      * or a UUID for short-lived, publishAndReturn events.
      * (Or really any object that can be used as a key in a map.)
      */
-    private final Queue<EventSubscription<T>> subscribers = new ConcurrentLinkedQueue<>();
-    private final Collection<EventSubscription<T>> subscribersReadOnly = Collections.unmodifiableCollection(subscribers);
+    private final Queue<EventSubscription> subscribers = new ConcurrentLinkedQueue<>();
+    private final Collection<EventSubscription> subscribersReadOnly = Collections.unmodifiableCollection(subscribers);
 
-    UUID subscribe(CheckedConsumer<T> eventHandler) {
-        EventSubscription<T> subscription = new EventSubscription<>(eventHandler);
+    void subscribe(EventSubscription subscription) {
         subscribers.add(subscription);
-        return subscription.getSubscriptionId();
     }
 
     /**
@@ -42,7 +38,7 @@ class EventSubscriberManager<T> {
             .forEach(subscribers::remove);
     }
 
-    public Collection<EventSubscription<T>> getSubscribers() {
+    public Collection<EventSubscription> getSubscribers() {
         return subscribersReadOnly;
     }
 }

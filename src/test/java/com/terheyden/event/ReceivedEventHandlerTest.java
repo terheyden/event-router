@@ -21,7 +21,7 @@ public class ReceivedEventHandlerTest {
     public void test() {
 
         StringBuilder builder = new StringBuilder();
-        EventSubscription subscription = new EventSubscription(builder::append);
+        EventSubscription subscription = new EventRouterSubscription(builder::append);
         PublishRequest request = Mocks.publishRequest(subscription, "hello");
         publisher.publish(request);
         EventUtils.sleep(300);

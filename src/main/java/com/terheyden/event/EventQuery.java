@@ -3,11 +3,12 @@ package com.terheyden.event;
 import java.util.UUID;
 
 import io.vavr.CheckedConsumer;
+import io.vavr.CheckedFunction1;
 
 /**
  * EventRouter interface.
  */
-public interface EventRouter<T> {
+public interface EventQuery<I, O> {
 
     /**
      * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
@@ -16,7 +17,7 @@ public interface EventRouter<T> {
      *                  This is the type of event that the handler will be subscribed to.
      * @return A UUID that can later be used to unsubscribe.
      */
-    UUID subscribe(CheckedConsumer<T> eventHandler);
+    UUID subscribe(CheckedFunction1<I, O> eventHandler);
 
     /**
      * Unsubscribe a previously-subscribed handler by its UUID.
@@ -49,5 +50,5 @@ public interface EventRouter<T> {
      *
      * @param event The event to send to all subscribers
      */
-    void publish(T eventObj);
+    void query(I eventObj, CheckedConsumer<O> responseHandler);
 }

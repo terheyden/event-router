@@ -25,7 +25,7 @@ class EventSubscriberMap {
 
     public <T> UUID add(Class<T> eventType, CheckedConsumer<T> eventHandler) {
 
-        EventSubscription subscription = new EventSubscription(eventHandler);
+        EventSubscription subscription = new EventRouterSubscription(eventHandler);
 
         // We don't want subscriptions changing while we're iterating over them.
         // So we want to use a concurrent collection here.

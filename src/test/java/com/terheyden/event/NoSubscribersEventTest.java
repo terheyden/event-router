@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test;
 /**
  * NoSubscribersEventTest unit tests.
  */
-public class NoSubscribersEventTest {
+class NoSubscribersEventTest {
 
     @Test
-    public void justForCoverage() {
+    void justForCoverage() {
 
         NoSubscribersEvent event = new NoSubscribersEvent("hello", String.class);
         event.event();

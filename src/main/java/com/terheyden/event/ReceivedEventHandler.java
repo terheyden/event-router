@@ -34,16 +34,16 @@ class ReceivedEventHandler<T> {
      */
     private static <T> void processPublishRequest(PublishRequest<T> publishRequest) {
 
-        Collection<EventSubscription<T>> subscribers = publishRequest.subscribers();
+        Collection<EventSubscription> subscribers = publishRequest.subscribers();
 
         if (subscribers.isEmpty()) {
             LOG.trace("No subscribers for event: {}", publishRequest);
             return;
         }
 
-        T event = publishRequest.event();
+        EventRequest<T> eventRequest = publishRequest.eventRequest();
         SendEventToSubscriberStrategy<T> sendStrategy = publishRequest.eventPublisher();
         LOG.trace("Dispatching event: {}", publishRequest);
-        sendStrategy.sendEventToSubscribers(event, subscribers);
+        sendStrategy.sendEventToSubscribers(eventRequest, subscribers);
     }
 }

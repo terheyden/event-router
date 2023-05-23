@@ -12,16 +12,11 @@ public final class Mocks {
         // Private since this class shouldn't be instantiated.
     }
 
-    static EventRouter eventRouter() {
-        return new EventRouterImpl<>(1);
-    }
+    static PublishRequest<String> publishRequest(EventSubscription subscription, String event) {
 
-    static PublishRequest publishRequest(EventSubscription subscription, Object event) {
-
-        PublishRequest request = new PublishRequest(
-            eventRouter(),
-            event,
-            new SequentialSendStrategy(),
+        PublishRequest<String> request = new PublishRequest<>(
+            new EventRequest<>(event),
+            new SequentialSendStrategy<>(),
             queue(subscription));
 
         return request;

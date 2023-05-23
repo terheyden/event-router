@@ -4,32 +4,33 @@ import java.util.UUID;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import io.vavr.CheckedConsumer;
+import io.vavr.CheckedFunction1;
 
 /**
  * EventRouter class.
  * Not static, so you can have multiple event routers.
  * You can always make it static if they want.
  */
-public class EventRouterImpl<T> extends AbstractEventRouter<T> implements EventRouter<T> {
+public class EventQueryImpl<I, O> extends AbstractEventRouter<I> implements EventQuery<I, O> {
 
     /**
      * Create a new event router with a custom thread pool.
      */
-    public EventRouterImpl(ThreadPoolExecutor threadPoolExecutor) {
-        super(threadPoolExecutor, new ThreadPoolSendStrategy<>(threadPoolExecutor));
+    public EventQueryImpl(ThreadPoolExecutor threadPoolExecutor) {
+        super(threadPoolExecutor, new EventQuerySendStrategy<>(threadPoolExecutor));
     }
 
     /**
      * Create a new event router with a dynamic thread pool of the given size.
      */
-    public EventRouterImpl(int threadPoolSize) {
+    public EventQueryImpl(int threadPoolSize) {
         this(ThreadPools.newDynamicThreadPool(threadPoolSize));
     }
 
     /**
      * Create a new event router with a dynamic thread pool of the default size ({@link EventRouterGlobals#DEFAULT_THREADPOOL_SIZE}).
      */
-    public EventRouterImpl() {
+    public EventQueryImpl() {
         this(EventRouterGlobals.DEFAULT_THREADPOOL_SIZE);
     }
 
@@ -41,8 +42,8 @@ public class EventRouterImpl<T> extends AbstractEventRouter<T> implements EventR
      * @return A UUID that can later be used to unsubscribe.
      */
     @Override
-    public UUID subscribe(CheckedConsumer<T> eventHandler) {
-        EventRouterSubscription<T> subscription = new EventRouterSubscription<>(eventHandler);
+    public UUID subscribe(CheckedFunction1<I, O> eventHandler) {
+        EventQuerySubscription<I, O> subscription = new EventQuerySubscription<>(eventHandler);
         getSubscriberManager().subscribe(subscription);
         return subscription.getSubscriptionId();
     }
@@ -82,7 +83,7 @@ public class EventRouterImpl<T> extends AbstractEventRouter<T> implements EventR
      * @param event The event to send to all subscribers
      */
     @Override
-    public void publish(T eventObj) {
-        publishInternal(new EventRequest<>(eventObj));
+    public void query(I eventObj, CheckedConsumer<O> responseHandler) {
+        publishInternal(new QueryEventRequest<>(eventObj, responseHandler));
     }
 }

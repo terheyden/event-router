@@ -19,10 +19,10 @@ public interface SendEventToSubscriberStrategy<T> {
      * the order in which they were subscribed (not that the publisher needs to obey that
      * depending on the strategy, but it could).
      *
-     * @param event       The event to deliver to each {@link EventSubscription}.
+     * @param event       The event to deliver to each {@link EventRouterSubscription}.
      * @param subscribers The concurrent collection of subscribers to deliver the event to, guaranteed to be non-empty.
      */
-    void sendEventToSubscribers(T event, Collection<EventSubscription<T>> subscribers);
+    void sendEventToSubscribers(EventRequest<T> eventRequest, Collection<EventSubscription> subscribers);
 
     String getMetrics();
 }

@@ -7,43 +7,36 @@ import java.util.Collection;
  */
 class PublishRequest<T> {
 
-    private final EventRouter<T> eventRouter;
-    private final T eventObj;
+    private final EventRequest<T> eventRequest;
     private final SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy;
-    private final Collection<EventSubscription<T>> subscribers;
+    private final Collection<EventSubscription> subscribers;
 
     PublishRequest(
-        EventRouter<T> eventRouter,
-        T eventObj,
+        EventRequest<T> eventRequest,
         SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy,
-        Collection<EventSubscription<T>> subscribers) {
+        Collection<EventSubscription> subscribers) {
 
-        this.eventRouter = eventRouter;
-        this.eventObj = eventObj;
+        this.eventRequest = eventRequest;
         this.sendEventToSubscriberStrategy = sendEventToSubscriberStrategy;
         this.subscribers = subscribers;
     }
 
-    T event() {
-        return eventObj;
+    EventRequest<T> eventRequest() {
+        return eventRequest;
     }
 
     SendEventToSubscriberStrategy<T> eventPublisher() {
         return sendEventToSubscriberStrategy;
     }
 
-    Collection<EventSubscription<T>> subscribers() {
+    Collection<EventSubscription> subscribers() {
         return subscribers;
-    }
-
-    EventRouter<T> eventRouter() {
-        return eventRouter;
     }
 
     @Override
     public String toString() {
-        return String.format("PublishRequest [%s (%s)]; %d subs => %s",
-            event(),
+        return String.format("PublishRequest [%s]; %d subs => %s",
+            eventRequest(),
             subscribers().size(),
             eventPublisher().getClass().getSimpleName());
     }

@@ -11,7 +11,7 @@ public class TutorialTest {
     public void tutorial1() {
 
         // Let's make a simple event router.
-        EventRouter<String> eventRouter = new EventRouterImpl<String>();
+        EventRouter<String> eventRouter = new EventRouterImpl<>();
 
         // Let's subscribe to all String events.
         eventRouter.subscribe(str -> System.out.println("Received: " + str));

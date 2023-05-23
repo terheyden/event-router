@@ -16,10 +16,14 @@ public class ThreadPoolSendStrategy<T> implements SendEventToSubscriberStrategy<
     }
 
     @Override
-    public void sendEventToSubscribers(T event, Collection<EventSubscription<T>> subscribers) {
-        subscribers.forEach(sub ->
+    @SuppressWarnings("unchecked")
+    public void sendEventToSubscribers(EventRequest<T> eventRequest, Collection<EventSubscription> subscribers) {
+        subscribers
+            .stream()
+            .map(sub -> (EventRouterSubscription<T>) sub)
+            .forEach(sub ->
             threadpool.execute(() ->
-                sub.getEventHandler().unchecked().accept(event)));
+                sub.getEventHandler().unchecked().accept(eventRequest.getEventObj())));
     }
 
     @Override

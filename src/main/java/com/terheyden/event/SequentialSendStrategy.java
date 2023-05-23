@@ -8,10 +8,14 @@ import java.util.Collection;
 public class SequentialSendStrategy<T> implements SendEventToSubscriberStrategy<T> {
 
     @Override
-    public void sendEventToSubscribers(T event, Collection<EventSubscription<T>> subscribers) {
+    @SuppressWarnings("unchecked")
+    public void sendEventToSubscribers(EventRequest<T> eventRequest, Collection<EventSubscription> subscribers) {
 
-        subscribers.forEach(sub ->
-            sub.getEventHandler().unchecked().accept(event));
+        subscribers
+            .stream()
+            .map(sub -> (EventRouterSubscription<T>) sub)
+            .forEach(sub ->
+            sub.getEventHandler().unchecked().accept(eventRequest.getEventObj()));
     }
 
     @Override
