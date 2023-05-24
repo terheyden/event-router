@@ -5,7 +5,7 @@ import java.util.Collection;
 /**
  * Publishes events to subscribers in order, on the calling thread.
  */
-public class SequentialSendStrategy<T> implements SendEventToSubscriberStrategy<T> {
+class SequentialSendStrategy<T> implements SendEventToSubscriberStrategy<T> {
 
     @Override
     @SuppressWarnings("unchecked")

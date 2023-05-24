@@ -11,7 +11,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * If event {@code MyEvent} is published and there are 3 subscribers,
  * then 3 sendEventToSubscribers tasks are created and run on the thread pool in this publisher.
  */
-public class EventQuerySendStrategy<I, O> implements SendEventToSubscriberStrategy<I> {
+class EventQuerySendStrategy<I, O> implements SendEventToSubscriberStrategy<I> {
 
     private static final Logger LOG = getLogger(EventQuerySendStrategy.class);
 

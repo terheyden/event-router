@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * If event {@code MyEvent} is published and there are 3 subscribers,
  * then 3 sendEventToSubscribers tasks are created and run on the thread pool in this publisher.
  */
-public class ThreadPoolSendStrategy<T> implements SendEventToSubscriberStrategy<T> {
+class ThreadPoolSendStrategy<T> implements SendEventToSubscriberStrategy<T> {
 
     private final ThreadPoolExecutor threadpool;
 
