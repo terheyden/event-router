@@ -5,7 +5,7 @@ import java.util.UUID;
 import io.vavr.CheckedConsumer;
 
 /**
- * Used by {@link EventSubscriberMap} to store a subscription.
+ * A standard {@link EventRouterImpl} subscription.
  * Has a UUID to identify it, and the handler to apply to incoming event objects.
  */
 final class EventRouterSubscription<T> implements EventSubscription {

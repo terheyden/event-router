@@ -5,18 +5,24 @@ import org.junit.jupiter.api.Test;
 /**
  * TutorialTest class.
  */
-public class TutorialTest {
+class TutorialTest {
 
     @Test
-    public void tutorial1() {
+    void tutorial1() {
 
         // Let's make a simple event router.
-        EventRouter<String> eventRouter = new EventRouterImpl<>();
+        // String events will get sent, and when they are received they'll just print to stdout.
+        EventRouter<String> printStringEvent = EventRouters
+            .createWithEventType(String.class)
+            .build();
 
         // Let's subscribe to all String events.
-        eventRouter.subscribe(str -> System.out.println("Received: " + str));
+        printStringEvent.subscribe(str -> System.out.println("Received: " + str));
 
-        // Sweet, now let's sendEventToSubscribers our first event.
-        eventRouter.publish("Hello, world!");
+        // Publish a String event to test.
+        printStringEvent.publish("Hello, world!");
+
+        // Everything happens asynchronously, so wait a sec for the event to be processed.
+        EventUtils.sleep(200);
     }
 }

@@ -5,9 +5,14 @@ import java.util.UUID;
 import io.vavr.CheckedFunction1;
 
 /**
- * EventRouter interface.
+ * A publish-subsribe event router with modifiable events.
+ * Subscribers are called in the order they subscribed,
+ * and may modify, replace, or cancel the event.
+ *
+ * @see EventRouter
+ * @see EventQuery
  */
-public interface ModifiableEventRouter<T> {
+public interface ModifiableEventRouter<T> extends EventActor {
 
     /**
      * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
@@ -17,13 +22,6 @@ public interface ModifiableEventRouter<T> {
      * @return A UUID that can later be used to unsubscribe.
      */
     UUID subscribe(CheckedFunction1<T, T> eventHandler);
-
-    /**
-     * Unsubscribe a previously-subscribed handler by its UUID.
-     *
-     * @param subscriptionId The UUID returned by the subscribe() method.
-     */
-    void unsubscribe(UUID subscriptionId);
 
     /**
      * Publish the given event to all subscribers of the event object's type.

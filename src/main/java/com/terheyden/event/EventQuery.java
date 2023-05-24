@@ -6,9 +6,12 @@ import io.vavr.CheckedConsumer;
 import io.vavr.CheckedFunction1;
 
 /**
- * EventRouter interface.
+ * A publish-subscribe event router that sends query events that return a response.
+ *
+ * @see EventRouter
+ * @see ModifiableEventRouter
  */
-public interface EventQuery<I, O> {
+public interface EventQuery<I, O> extends EventActor {
 
     /**
      * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
@@ -18,13 +21,6 @@ public interface EventQuery<I, O> {
      * @return A UUID that can later be used to unsubscribe.
      */
     UUID subscribe(CheckedFunction1<I, O> eventHandler);
-
-    /**
-     * Unsubscribe a previously-subscribed handler by its UUID.
-     *
-     * @param subscriptionId The UUID returned by the subscribe() method.
-     */
-    void unsubscribe(UUID subscriptionId);
 
     /**
      * Publish the given event to all subscribers of the event object's type.

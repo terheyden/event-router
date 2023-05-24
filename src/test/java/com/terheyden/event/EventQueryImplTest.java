@@ -21,7 +21,11 @@ class EventQueryImplTest {
     void test() throws InterruptedException {
 
         // Query sends a string, and gets the string length back...
-        EventQueryImpl<String, Integer> events = new EventQueryImpl<>(1);
+        EventQuery<String, Integer> events = EventRouters
+            .createWithEventType(String.class)
+            .eventReplyType(Integer.class)
+            .build();
+
         events.subscribe(String::length);
         LOG.debug("Sending query...");
         events.query("hello", this::verifyQueryResult);

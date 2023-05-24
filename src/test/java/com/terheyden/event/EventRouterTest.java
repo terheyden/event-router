@@ -20,11 +20,11 @@ class EventRouterTest {
 
     private static final String HELLO = "hello";
 
-    private EventRouterImpl<String> router;
+    private EventRouter<String> router;
 
     @BeforeEach
     void beforeEach() {
-        router = new EventRouterImpl<>();
+        router = EventRouters.createWithEventType(String.class).build();
     }
 
     @Test
@@ -40,7 +40,7 @@ class EventRouterTest {
     void testUnsubscribe() {
 
         AtomicInteger counter = new AtomicInteger(0);
-        assertThat(router.getSubscribers()).isEmpty();
+        assertThat(router.getSubscriptions()).isEmpty();
 
         UUID subscriptionId = router.subscribe(e -> counter.incrementAndGet());
 
@@ -49,7 +49,7 @@ class EventRouterTest {
 
         assertThat(counter.get()).isEqualTo(1);
         router.unsubscribe(subscriptionId);
-        assertThat(router.getSubscribers()).isEmpty();
+        assertThat(router.getSubscriptions()).isEmpty();
     }
 
     @Test

@@ -28,7 +28,7 @@ class EventRouterLoadTest {
     void testDefaultConfigForCPU() throws InterruptedException {
         int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
         int numberOfEvents = 50_000;
-        runLoadTest(new EventRouterImpl<>(), numberOfEvents, simulatedWorkDelayMs);
+        runLoadTest(EventRouters.createWithEventType(String.class).build(), numberOfEvents, simulatedWorkDelayMs);
     }
 
     /**
@@ -39,7 +39,7 @@ class EventRouterLoadTest {
     void testDefaultConfigForIO() throws InterruptedException {
         int simulatedWorkDelayMs = 3; // Let's say each task takes 3ms to complete.
         int numberOfEvents = 10_000;
-        runLoadTest(new EventRouterImpl<>(), numberOfEvents, simulatedWorkDelayMs);
+        runLoadTest(EventRouters.createWithEventType(String.class).build(), numberOfEvents, simulatedWorkDelayMs);
     }
 
     /**
@@ -53,12 +53,14 @@ class EventRouterLoadTest {
         int threadPoolSize = 1000;    // For large IO-bound systems we recommend around 1000 threads.
         int numberOfEvents = 10_000;
 
-        EventRouterImpl<String> eventRouter = new EventRouterImpl<>(threadPoolSize);
+        EventRouter<String> eventRouter = EventRouters.createWithEventType(String.class)
+            .maxThreadPoolSize(threadPoolSize)
+            .build();
         runLoadTest(eventRouter, numberOfEvents, simulatedWorkDelayMs);
     }
 
     private void runLoadTest(
-        EventRouterImpl<String> eventRouter,
+        EventRouter<String> eventRouter,
         int eventCount,
         int eventDelayMs)
         throws InterruptedException {
@@ -95,7 +97,7 @@ class EventRouterLoadTest {
         long totalDelivered = eventCount * subscriberCount;
         DecimalFormat df = new DecimalFormat("#.00");
         LOG.info("Done in {} secs ({} msg/sec)", seconds, df.format(totalDelivered / seconds));
-        LOG.debug(EventUtils.threadReport(eventRouter.getThreadPoolExecutor()));
+        LOG.debug(EventUtils.threadReport(eventRouter.getThreadPool()));
         reportIncompleteListeners(subscribers, eventCount);
     }
 

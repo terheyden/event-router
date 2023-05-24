@@ -20,7 +20,10 @@ class ModifiableEventRouterImplTest {
     void test() {
 
         // Create a new event router.
-        ModifiableEventRouterImpl<String> router = new ModifiableEventRouterImpl<>();
+        ModifiableEventRouter<String> router = EventRouters
+            .createWithEventType(String.class)
+            .modifiableEvents()
+            .build();
 
         // Add some subscribers in order.
         // First verify the start string.

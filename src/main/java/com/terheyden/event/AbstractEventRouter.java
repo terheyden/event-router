@@ -44,23 +44,6 @@ class AbstractEventRouter<T> {
         this.threadPoolExecutor = threadPoolExecutor;
     }
 
-    /**
-     * Create a new event router with a dynamic thread pool of the given size.
-     */
-    protected AbstractEventRouter(
-        int threadPoolSize,
-        SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy) {
-
-        this(ThreadPools.newDynamicThreadPool(threadPoolSize), sendEventToSubscriberStrategy);
-    }
-
-    /**
-     * Create a new event router with a dynamic thread pool of the default size ({@link EventRouterGlobals#DEFAULT_THREADPOOL_SIZE}).
-     */
-    protected AbstractEventRouter(SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy) {
-        this(EventRouterGlobals.DEFAULT_THREADPOOL_SIZE, sendEventToSubscriberStrategy);
-    }
-
     protected void publishInternal(EventRequest<T> eventRequest) {
 
         PublishRequest<T> request = new PublishRequest<>(
@@ -75,18 +58,21 @@ class AbstractEventRouter<T> {
      * The singular thread pool used by all components in this event router.
      * For metrics only — don't use this to publish events.
      */
-    public ThreadPoolExecutor getThreadPoolExecutor() {
+    protected ThreadPoolExecutor getThreadPool() {
         return threadPoolExecutor;
     }
 
+    /**
+     * Used by subclasses to manage subscriptions.
+     */
     protected EventSubscriberManager getSubscriberManager() {
         return subscriberManager;
     }
 
     /**
-     * For testing only.
+     * For testing / reporting.
      */
-    Collection<EventSubscription> getSubscribers() {
+    protected Collection<EventSubscription> getSubscribers() {
         return subscriberManager.getSubscribers();
     }
 }

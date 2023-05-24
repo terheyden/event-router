@@ -5,7 +5,7 @@ import java.util.UUID;
 import io.vavr.CheckedFunction1;
 
 /**
- * Used by {@link EventSubscriberMap} to store a subscription.
+ * An {@link EventQueryImpl} subscription.
  * Has a UUID to identify it, and the handler to apply to incoming event objects.
  */
 final class EventQuerySubscription<I, O> implements EventSubscription {
