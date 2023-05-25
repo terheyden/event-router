@@ -2,15 +2,21 @@ package com.terheyden.event;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
+import io.vavr.CheckedConsumer;
+
+import static java.lang.String.format;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -22,6 +28,7 @@ class EventRouterLoadTest {
 
     /**
      * Test throughput of the default config, assuming it's a CPU-intensive system.
+     * 900k / sec.
      */
     @Test
     @Disabled
@@ -29,6 +36,28 @@ class EventRouterLoadTest {
         int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
         int numberOfEvents = 50_000;
         runLoadTest(EventRouters.createWithEventType(String.class).build(), numberOfEvents, simulatedWorkDelayMs);
+    }
+
+    /**
+     * Test throughput of the default config, assuming it's a CPU-intensive system.
+     * 2M / sec.
+     */
+    @Test
+    @Disabled
+    void testDefaultModifiableRouterForCPU() throws InterruptedException {
+
+        int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
+        int numberOfEvents = 50_000;
+
+        ModifiableEventRouter<String> modifiableRouter = EventRouters
+            .createWithEventType(String.class)
+            .modifiableEvents()
+            .build();
+
+        // Adapt it.
+        ModifiableEventRouterAdapter<String> adapter = new ModifiableEventRouterAdapter<>(modifiableRouter);
+
+        runLoadTest(adapter, numberOfEvents, simulatedWorkDelayMs);
     }
 
     /**
@@ -81,18 +110,17 @@ class EventRouterLoadTest {
 
         LOG.info("Publishing {} events...", eventCount);
         // Make our event payload objects.
-        Integer intEvent = 1;
-        Float floatEvent = 1.0F;
         String stringEvent = "hi";
-        Long longEvent = 1L;
         long start = System.currentTimeMillis();
 
         for (int i = 0; i < eventCount; i++) {
             eventRouter.publish(stringEvent);
         }
 
-        LOG.info("Waiting for subscribers to finish...");
-        latch.await(10, TimeUnit.SECONDS);
+        LOG.info("All events queued; waiting for subscribers to finish...");
+        //reportAndAwaitLatch(eventRouter, latch);
+        latch.await();
+
         double seconds = (System.currentTimeMillis() - start) / 1000.0;
         long totalDelivered = eventCount * subscriberCount;
         DecimalFormat df = new DecimalFormat("#.00");
@@ -101,11 +129,37 @@ class EventRouterLoadTest {
         reportIncompleteListeners(subscribers, eventCount);
     }
 
+    private static void reportAndAwaitLatch(EventRouter<String> eventRouter, CountDownLatch latch) {
+
+        ThreadPoolExecutor pool = eventRouter.getThreadPool();
+        BlockingQueue<Runnable> poolQueue = pool.getQueue();
+
+        while (latch.getCount() > 0) {
+
+            long taskCount = pool.getTaskCount();
+            long completedTaskCount = pool.getCompletedTaskCount();
+            int activeCount = pool.getActiveCount();
+            int poolSize = pool.getPoolSize();
+            int largestPoolSize = pool.getLargestPoolSize();
+            int maximumPoolSize = pool.getMaximumPoolSize();
+            int corePoolSize = pool.getCorePoolSize();
+            int poolQueueSize = poolQueue.size();
+
+            StringBuilder builder = new StringBuilder();
+            builder.append(format("Tasks: %d running, %d completed, %d total. ", activeCount, completedTaskCount, taskCount));
+            builder.append(format("Pool: %d current, %d largest, %d max, %d core. Queue: %d", poolSize, largestPoolSize, maximumPoolSize, corePoolSize, poolQueueSize));
+
+            // Report the threadpool load.
+            LOG.info(builder.toString());
+            EventUtils.sleep(250);
+        }
+    }
+
     private static void reportIncompleteListeners(List<LoadSubscriber> listeners, int eventCount) {
         for (LoadSubscriber listener : listeners) {
             long listenerCount = listener.getCounter();
             if (listenerCount != eventCount) {
-                LOG.error("Listener: {}", listenerCount);
+                LOG.error("Listener: {}/{} ({}%)", listenerCount, eventCount, (int) (listenerCount * 100.0 / eventCount));
             }
         }
     }
@@ -135,6 +189,46 @@ class EventRouterLoadTest {
 
         public long getCounter() {
             return counter.get();
+        }
+    }
+
+    /**
+     * Adapts a {@link ModifiableEventRouter} to an {@link EventRouter}
+     * for use in our load test.
+     */
+    static class ModifiableEventRouterAdapter<T> implements EventRouter<T> {
+        private final ModifiableEventRouter<T> modifiableEventRouter;
+
+        ModifiableEventRouterAdapter(ModifiableEventRouter<T> modifiableEventRouter) {
+            this.modifiableEventRouter = modifiableEventRouter;
+        }
+
+        @Override
+        public UUID subscribe(CheckedConsumer<T> eventHandler) {
+            return modifiableEventRouter.subscribe(event -> {
+                eventHandler.unchecked().accept(event);
+                return event;
+            });
+        }
+
+        @Override
+        public void publish(T eventObj) {
+            modifiableEventRouter.publish(eventObj);
+        }
+
+        @Override
+        public void unsubscribe(UUID subscriptionId) {
+            modifiableEventRouter.unsubscribe(subscriptionId);
+        }
+
+        @Override
+        public Collection<UUID> getSubscriptions() {
+            return modifiableEventRouter.getSubscriptions();
+        }
+
+        @Override
+        public ThreadPoolExecutor getThreadPool() {
+            return modifiableEventRouter.getThreadPool();
         }
     }
 }

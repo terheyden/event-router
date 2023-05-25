@@ -41,4 +41,8 @@ class EventSubscriberManager {
     public Collection<EventSubscription> getSubscribers() {
         return subscribersReadOnly;
     }
+
+    Queue<EventSubscription> getSubscribersInternal() {
+        return subscribers;
+    }
 }

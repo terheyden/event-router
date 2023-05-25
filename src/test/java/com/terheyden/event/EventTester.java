@@ -49,7 +49,7 @@ public final class EventTester {
         throw new RuntimeException("Exception while processing event: " + event);
     }
 
-    public static <T> void awaitEmpty(EventActor eventRouter) {
+    public static <T> void awaitEmpty(EventSubscriber eventRouter) {
         while (eventRouter.getThreadPool().getActiveCount() > 0) {
             TestUtils.sleep(100);
         }

@@ -23,6 +23,14 @@ public final class EventRouters {
 
         private int maxThreadPoolSize = EventRouterGlobals.DEFAULT_THREADPOOL_SIZE;
 
+        /**
+         * The default for a standard event router is {@link ThreadPoolSendStrategy}, since
+         * we assume that most services are network-bound and not CPU-bound. For CPU-bound
+         * services, we recommend {@link SequentialSendStrategy}.
+         * This var will determine the approach we build with.
+         */
+        private boolean networkOptimized = true;
+
         EventRouterBuilder() {
             // Package private.
         }
@@ -40,8 +48,25 @@ public final class EventRouters {
             return new ModifiableEventRouterBuilder<>(maxThreadPoolSize);
         }
 
+        public EventRouterBuilder<T> networkOptimized() {
+            networkOptimized = true;
+            return this;
+        }
+
+        public EventRouterBuilder<T> cpuOptimized() {
+            networkOptimized = false;
+            return this;
+        }
+
         public EventRouter<T> build() {
-            return new EventRouterImpl<>(createThreadPool(maxThreadPoolSize));
+
+            ThreadPoolExecutor threadPool = createThreadPool(maxThreadPoolSize);
+
+            SendEventToSubscriberStrategy<T> sendStrategy = networkOptimized
+                ? new ThreadPoolSendStrategy<>(threadPool)
+                : new SequentialSendStrategy<>();
+
+            return new EventRouterImpl<>(threadPool, sendStrategy);
         }
     }
 

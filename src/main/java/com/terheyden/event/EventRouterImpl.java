@@ -14,8 +14,8 @@ import io.vavr.CheckedConsumer;
  */
 class EventRouterImpl<T> extends AbstractEventRouter<T> implements EventRouter<T> {
 
-    EventRouterImpl(ThreadPoolExecutor threadPoolExecutor) {
-        super(threadPoolExecutor, new ThreadPoolSendStrategy<>(threadPoolExecutor));
+    EventRouterImpl(ThreadPoolExecutor threadPoolExecutor, SendEventToSubscriberStrategy<T> sendStrategy) {
+        super(threadPoolExecutor, sendStrategy);
     }
 
     @Override

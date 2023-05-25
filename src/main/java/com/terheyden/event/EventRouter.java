@@ -11,7 +11,7 @@ import io.vavr.CheckedConsumer;
  * @see EventQuery
  * @see ModifiableEventRouter
  */
-public interface EventRouter<T> extends EventActor {
+public interface EventRouter<T> extends EventSubscriber {
 
     /**
      * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
