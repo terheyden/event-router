@@ -8,16 +8,16 @@ import java.util.Collection;
 class PublishRequest<T> {
 
     private final EventRequest<T> eventRequest;
-    private final SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy;
+    private final SendEventStrategy<T> sendEventStrategy;
     private final Collection<EventSubscription> subscribers;
 
     PublishRequest(
         EventRequest<T> eventRequest,
-        SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy,
+        SendEventStrategy<T> sendEventStrategy,
         Collection<EventSubscription> subscribers) {
 
         this.eventRequest = eventRequest;
-        this.sendEventToSubscriberStrategy = sendEventToSubscriberStrategy;
+        this.sendEventStrategy = sendEventStrategy;
         this.subscribers = subscribers;
     }
 
@@ -25,8 +25,8 @@ class PublishRequest<T> {
         return eventRequest;
     }
 
-    SendEventToSubscriberStrategy<T> eventPublisher() {
-        return sendEventToSubscriberStrategy;
+    SendEventStrategy<T> eventPublisher() {
+        return sendEventStrategy;
     }
 
     Collection<EventSubscription> subscribers() {

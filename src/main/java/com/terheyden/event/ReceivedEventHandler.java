@@ -42,7 +42,7 @@ class ReceivedEventHandler<T> {
         }
 
         EventRequest<T> eventRequest = publishRequest.eventRequest();
-        SendEventToSubscriberStrategy<T> sendStrategy = publishRequest.eventPublisher();
+        SendEventStrategy<T> sendStrategy = publishRequest.eventPublisher();
         LOG.trace("Dispatching event: {}", publishRequest);
         sendStrategy.sendEventToSubscribers(eventRequest, subscribers);
     }

@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * Not static, so you can have multiple event routers.
  * You can always make it static if they want.
  */
-class AbstractEventRouter<T> {
+class BaseEventRouter<T> {
 
     /**
      * All "publish this event" requests are delegated to this class.
@@ -19,7 +19,7 @@ class AbstractEventRouter<T> {
      * Send events to subscribers.
      * Decides if messages sent directly (on the calling thread), multi-thread, in-order, etc.
      */
-    private final SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy;
+    private final SendEventStrategy<T> sendEventStrategy;
 
     /**
      * Manages event subscriptions.
@@ -34,12 +34,12 @@ class AbstractEventRouter<T> {
     /**
      * Create a new event router with a custom thread pool.
      */
-    protected AbstractEventRouter(
+    protected BaseEventRouter(
         ThreadPoolExecutor threadPoolExecutor,
-        SendEventToSubscriberStrategy<T> sendEventToSubscriberStrategy) {
+        SendEventStrategy<T> sendEventStrategy) {
 
         this.receivedEventHandler = new ReceivedEventHandler<>(threadPoolExecutor);
-        this.sendEventToSubscriberStrategy = sendEventToSubscriberStrategy;
+        this.sendEventStrategy = sendEventStrategy;
         this.subscriberManager = new EventSubscriberManager();
         this.threadPoolExecutor = threadPoolExecutor;
     }
@@ -48,7 +48,7 @@ class AbstractEventRouter<T> {
 
         PublishRequest<T> request = new PublishRequest<>(
             eventRequest,
-            sendEventToSubscriberStrategy,
+            sendEventStrategy,
             subscriberManager.getSubscribers());
 
         receivedEventHandler.publish(request);

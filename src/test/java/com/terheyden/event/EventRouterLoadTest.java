@@ -28,14 +28,33 @@ class EventRouterLoadTest {
 
     /**
      * Test throughput of the default config, assuming it's a CPU-intensive system.
-     * 900k / sec.
+     * 855k / sec.
      */
     @Test
-    @Disabled
-    void testDefaultConfigForCPU() throws InterruptedException {
+    @Disabled("load test")
+    void testDefaultCPUConfig() throws InterruptedException {
         int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
-        int numberOfEvents = 50_000;
-        runLoadTest(EventRouters.createWithEventType(String.class).build(), numberOfEvents, simulatedWorkDelayMs);
+        int numberOfEvents = 80_000;
+        runLoadTest(EventRouters
+            .createWithEventType(String.class)
+            .build(),
+            numberOfEvents, simulatedWorkDelayMs);
+    }
+
+    /**
+     * Test throughput of the default config, but they've specified the cpu-optimized flag.
+     * 2.5M / sec.
+     */
+    @Test
+    @Disabled("load test")
+    void testOptimizedCPUConfig() throws InterruptedException {
+        int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
+        int numberOfEvents = 200_000;
+        runLoadTest(EventRouters
+            .createWithEventType(String.class)
+            .cpuOptimized()
+            .build(),
+            numberOfEvents, simulatedWorkDelayMs);
     }
 
     /**
@@ -43,7 +62,7 @@ class EventRouterLoadTest {
      * 2M / sec.
      */
     @Test
-    @Disabled
+    @Disabled("load test")
     void testDefaultModifiableRouterForCPU() throws InterruptedException {
 
         int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
@@ -62,20 +81,39 @@ class EventRouterLoadTest {
 
     /**
      * Test throughput of the default config, assuming it's an IO-bound system.
+     * The default should be multi-threaded (which is ideal for IO).
      */
     @Test
-    @Disabled
-    void testDefaultConfigForIO() throws InterruptedException {
+    @Disabled("load test")
+    void testDefaultIOConfig() throws InterruptedException {
+        int simulatedWorkDelayMs = 3; // Let's say each task takes 3ms to complete.
+        int numberOfEvents = 50_00;
+        runLoadTest(EventRouters
+            .createWithEventType(String.class)
+            .build(),
+            numberOfEvents, simulatedWorkDelayMs);
+    }
+
+    /**
+     * Test throughput of the default config, assuming it's an IO-bound system.
+     */
+    @Test
+    @Disabled("load test")
+    void testSyncIOConfig() throws InterruptedException {
         int simulatedWorkDelayMs = 3; // Let's say each task takes 3ms to complete.
         int numberOfEvents = 10_000;
-        runLoadTest(EventRouters.createWithEventType(String.class).build(), numberOfEvents, simulatedWorkDelayMs);
+        runLoadTest(EventRouters
+            .createWithEventType(String.class)
+            .cpuOptimized() // Whoops don't do this. Only doing this to test performance difference.
+            .build(),
+            numberOfEvents, simulatedWorkDelayMs);
     }
 
     /**
      * Test optimized settings for an IO-bound system.
      */
     @Test
-    @Disabled
+    @Disabled("load test")
     void testRecommendedIOConfig() throws InterruptedException {
 
         int simulatedWorkDelayMs = 3; // Let's say each task takes 3ms to complete.

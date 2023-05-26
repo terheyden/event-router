@@ -11,7 +11,7 @@ import java.util.Collection;
  * depending on the event type and/or the event publisher (e.g. direct reacts
  * very differently than a threadpool).
  */
-public interface SendEventToSubscriberStrategy<T> {
+public interface SendEventStrategy<T> {
 
     /**
      * A sendEventToSubscribers request has been made. This publisher should use its preferred strategy
@@ -22,7 +22,9 @@ public interface SendEventToSubscriberStrategy<T> {
      * @param event       The event to deliver to each {@link EventRouterSubscription}.
      * @param subscribers The concurrent collection of subscribers to deliver the event to, guaranteed to be non-empty.
      */
-    void sendEventToSubscribers(EventRequest<T> eventRequest, Collection<EventSubscription> subscribers);
+    void sendEventToSubscribers(EventRequest<? extends T> eventRequest, Collection<? extends EventSubscription> subscribers);
 
-    String getMetrics();
+    default String getMetrics() {
+        return getClass().getSimpleName() + " has no metrics data.";
+    }
 }

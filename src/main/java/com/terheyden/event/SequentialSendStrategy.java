@@ -5,11 +5,11 @@ import java.util.Collection;
 /**
  * Publishes events to subscribers in order, on the calling thread.
  */
-class SequentialSendStrategy<T> implements SendEventToSubscriberStrategy<T> {
+class SequentialSendStrategy<T> implements SendEventStrategy<T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void sendEventToSubscribers(EventRequest<T> eventRequest, Collection<EventSubscription> subscribers) {
+    public void sendEventToSubscribers(EventRequest<? extends T> eventRequest, Collection<? extends EventSubscription> subscribers) {
 
         subscribers
             .stream()

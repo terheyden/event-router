@@ -1,5 +1,6 @@
 package com.terheyden.event;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -11,6 +12,10 @@ public final class EventRouters {
         // Private since this class shouldn't be instantiated.
     }
 
+    /**
+     * Create a new event router builder that sends events of the given class type.
+     * @param eventType type of event objects to send
+     */
     public static <T> EventRouterBuilder<T> createWithEventType(Class<T> eventType) {
         return new EventRouterBuilder<>();
     }
@@ -23,13 +28,15 @@ public final class EventRouters {
 
         private int maxThreadPoolSize = EventRouterGlobals.DEFAULT_THREADPOOL_SIZE;
 
+        @Nullable private ThreadPoolExecutor customThreadPool = null;
+
         /**
          * The default for a standard event router is {@link ThreadPoolSendStrategy}, since
          * we assume that most services are network-bound and not CPU-bound. For CPU-bound
          * services, we recommend {@link SequentialSendStrategy}.
          * This var will determine the approach we build with.
          */
-        private boolean networkOptimized = true;
+        private boolean isNetworkOptimized = true;
 
         EventRouterBuilder() {
             // Package private.
@@ -40,29 +47,50 @@ public final class EventRouters {
             return this;
         }
 
+        public EventRouterBuilder<T> customThreadPool(ThreadPoolExecutor customThreadPool) {
+            this.customThreadPool = customThreadPool;
+            return this;
+        }
+
+        /**
+         * Indicates that sent events are expected to return a reply of the given class type.
+         * For example, let's make a router that accepts a String event and replies with the String's length:
+         * <pre>
+         * {@code
+         * EventRouters
+         *     .createWithEventType(MyEvent.class)
+         *     .eventReplyType(Integer.class)
+         *     .build();
+         * }
+         * </pre>
+         *
+         * @param replyType the type of reply expected from the event
+         */
         public <O> EventQueryBuilder<T, O> eventReplyType(Class<O> replyType) {
-            return new EventQueryBuilder<>(maxThreadPoolSize);
+            return new EventQueryBuilder<>(maxThreadPoolSize, customThreadPool);
         }
 
         public ModifiableEventRouterBuilder<T> modifiableEvents() {
-            return new ModifiableEventRouterBuilder<>(maxThreadPoolSize);
+            return new ModifiableEventRouterBuilder<>(maxThreadPoolSize, customThreadPool);
         }
 
         public EventRouterBuilder<T> networkOptimized() {
-            networkOptimized = true;
+            isNetworkOptimized = true;
             return this;
         }
 
         public EventRouterBuilder<T> cpuOptimized() {
-            networkOptimized = false;
+            isNetworkOptimized = false;
             return this;
         }
 
         public EventRouter<T> build() {
 
-            ThreadPoolExecutor threadPool = createThreadPool(maxThreadPoolSize);
+            ThreadPoolExecutor threadPool = customThreadPool == null
+                ? createThreadPool(maxThreadPoolSize)
+                : customThreadPool;
 
-            SendEventToSubscriberStrategy<T> sendStrategy = networkOptimized
+            SendEventStrategy<T> sendStrategy = isNetworkOptimized
                 ? new ThreadPoolSendStrategy<>(threadPool)
                 : new SequentialSendStrategy<>();
 
@@ -70,12 +98,27 @@ public final class EventRouters {
         }
     }
 
+    /**
+     * Builder for event routers with events that return a reply.
+     * Created by specifying {@link EventRouterBuilder#eventReplyType(Class)}.
+     */
     public static class EventQueryBuilder<I, O> {
 
         private int maxThreadPoolSize;
 
-        EventQueryBuilder(int maxThreadPoolSize) {
+        @Nullable private ThreadPoolExecutor customThreadPool;
+
+        /**
+         * The default for a standard event router is {@link ThreadPoolSendStrategy}, since
+         * we assume that most services are network-bound and not CPU-bound. For CPU-bound
+         * services, we recommend {@link SequentialSendStrategy}.
+         * This var will determine the approach we build with.
+         */
+        private boolean isNetworkOptimized = true;
+
+        EventQueryBuilder(int maxThreadPoolSize, @Nullable ThreadPoolExecutor customThreadPool) {
             this.maxThreadPoolSize = maxThreadPoolSize;
+            this.customThreadPool = customThreadPool;
         }
 
         public EventQueryBuilder<I, O> maxThreadPoolSize(int maxThreadPoolSize) {
@@ -83,17 +126,48 @@ public final class EventRouters {
             return this;
         }
 
+        public EventQueryBuilder<I, O> customThreadPool(ThreadPoolExecutor customThreadPool) {
+            this.customThreadPool = customThreadPool;
+            return this;
+        }
+
+        public EventQueryBuilder<I, O> networkOptimized() {
+            isNetworkOptimized = true;
+            return this;
+        }
+
+        public EventQueryBuilder<I, O> cpuOptimized() {
+            isNetworkOptimized = false;
+            return this;
+        }
+
         public EventQuery<I, O> build() {
-            return new EventQueryImpl<>(createThreadPool(maxThreadPoolSize));
+
+            ThreadPoolExecutor threadPool = customThreadPool == null
+                ? createThreadPool(maxThreadPoolSize)
+                : customThreadPool;
+
+            SendEventStrategy<I> sendStrategy = isNetworkOptimized
+                ? new EventQuerySendAsyncStrategy<>(threadPool)
+                : new EventQuerySendSequentialStrategy<>();
+
+            return new EventQueryImpl<>(threadPool, sendStrategy);
         }
     }
 
+    /**
+     * Build a new event router that supports events that may be modified during delivery.
+     * Only sequential delivery is supported in order to make that possible.
+     */
     public static class ModifiableEventRouterBuilder<T> {
 
         private int maxThreadPoolSize;
 
-        ModifiableEventRouterBuilder(int maxThreadPoolSize) {
+        @Nullable private ThreadPoolExecutor customThreadPool;
+
+        ModifiableEventRouterBuilder(int maxThreadPoolSize, @Nullable ThreadPoolExecutor customThreadPool) {
             this.maxThreadPoolSize = maxThreadPoolSize;
+            this.customThreadPool = customThreadPool;
         }
 
         public ModifiableEventRouterBuilder<T> maxThreadPoolSize(int maxThreadPoolSize) {
@@ -101,8 +175,18 @@ public final class EventRouters {
             return this;
         }
 
+        public ModifiableEventRouterBuilder<T> customThreadPool(ThreadPoolExecutor customThreadPool) {
+            this.customThreadPool = customThreadPool;
+            return this;
+        }
+
         public ModifiableEventRouter<T> build() {
-            return new ModifiableEventRouterImpl<>(createThreadPool(maxThreadPoolSize));
+
+            ThreadPoolExecutor threadPool = customThreadPool == null
+                ? createThreadPool(maxThreadPoolSize)
+                : customThreadPool;
+
+            return new ModifiableEventRouterImpl<>(threadPool);
         }
     }
 }

@@ -12,7 +12,7 @@ import io.vavr.CheckedFunction1;
  * Not static, so you can have multiple event routers.
  * You can always make it static if they want.
  */
-class ModifiableEventRouterImpl<T> extends AbstractEventRouter<T> implements ModifiableEventRouter<T> {
+class ModifiableEventRouterImpl<T> extends BaseEventRouter<T> implements ModifiableEventRouter<T> {
 
     ModifiableEventRouterImpl(ThreadPoolExecutor threadPoolExecutor) {
         super(threadPoolExecutor, new ModifiableEventSendStrategy<>());
