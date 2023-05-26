@@ -36,7 +36,7 @@ public final class EventRouters {
          * services, we recommend {@link SequentialSendStrategy}.
          * This var will determine the approach we build with.
          */
-        private boolean isNetworkOptimized = true;
+        private boolean isMaxAsync = false;
 
         EventRouterBuilder() {
             // Package private.
@@ -74,13 +74,12 @@ public final class EventRouters {
             return new ModifiableEventRouterBuilder<>(maxThreadPoolSize, customThreadPool);
         }
 
-        public EventRouterBuilder<T> networkOptimized() {
-            isNetworkOptimized = true;
-            return this;
-        }
-
-        public EventRouterBuilder<T> cpuOptimized() {
-            isNetworkOptimized = false;
+        /**
+         * This is an advanced setting: the default thread configuration is optimized for most use cases.
+         * Use this setting if you expect to have many long-running subscribers and very few events.
+         */
+        public EventRouterBuilder<T> maxAsync() {
+            isMaxAsync = true;
             return this;
         }
 
@@ -90,7 +89,7 @@ public final class EventRouters {
                 ? createThreadPool(maxThreadPoolSize)
                 : customThreadPool;
 
-            SendEventStrategy<T> sendStrategy = isNetworkOptimized
+            SendEventStrategy<T> sendStrategy = isMaxAsync
                 ? new ThreadPoolSendStrategy<>(threadPool)
                 : new SequentialSendStrategy<>();
 
@@ -114,7 +113,7 @@ public final class EventRouters {
          * services, we recommend {@link SequentialSendStrategy}.
          * This var will determine the approach we build with.
          */
-        private boolean isNetworkOptimized = true;
+        private boolean isMaxAsync = false;
 
         EventQueryBuilder(int maxThreadPoolSize, @Nullable ThreadPoolExecutor customThreadPool) {
             this.maxThreadPoolSize = maxThreadPoolSize;
@@ -131,13 +130,12 @@ public final class EventRouters {
             return this;
         }
 
-        public EventQueryBuilder<I, O> networkOptimized() {
-            isNetworkOptimized = true;
-            return this;
-        }
-
-        public EventQueryBuilder<I, O> cpuOptimized() {
-            isNetworkOptimized = false;
+        /**
+         * This is an advanced setting: the default thread configuration is optimized for most use cases.
+         * Use this setting if you expect to have many long-running subscribers and very few events.
+         */
+        public EventQueryBuilder<I, O> maxAsync() {
+            isMaxAsync = true;
             return this;
         }
 
@@ -147,7 +145,7 @@ public final class EventRouters {
                 ? createThreadPool(maxThreadPoolSize)
                 : customThreadPool;
 
-            SendEventStrategy<I> sendStrategy = isNetworkOptimized
+            SendEventStrategy<I> sendStrategy = isMaxAsync
                 ? new EventQuerySendAsyncStrategy<>(threadPool)
                 : new EventQuerySendSequentialStrategy<>();
 

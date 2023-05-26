@@ -26,6 +26,18 @@ class EventRouterLoadTest {
 
     static final Logger LOG = getLogger(EventRouterLoadTest.class);
 
+    private static final int NETWORK_DELAY_MS = 10;
+    private static final int CPU_DELAY_MS = 0;
+
+    // For testing thread model / maxAsync:
+    private static final int LOW_SUBSCRIBER_COUNT = 10;
+
+    // For normal cpu / network testing:
+    private static final int MEDIUM_SUBSCRIBER_COUNT = 50;
+
+    // For testing thread model / maxAsync:
+    private static final int HIGH_SUBSCRIBER_COUNT = 100;
+
     /**
      * Test throughput of the default config, assuming it's a CPU-intensive system.
      * 855k / sec.
@@ -33,12 +45,15 @@ class EventRouterLoadTest {
     @Test
     @Disabled("load test")
     void testDefaultCPUConfig() throws InterruptedException {
-        int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
+
         int numberOfEvents = 80_000;
+
         runLoadTest(EventRouters
             .createWithEventType(String.class)
             .build(),
-            numberOfEvents, simulatedWorkDelayMs);
+            MEDIUM_SUBSCRIBER_COUNT,
+            numberOfEvents,
+            CPU_DELAY_MS);
     }
 
     /**
@@ -48,13 +63,16 @@ class EventRouterLoadTest {
     @Test
     @Disabled("load test")
     void testOptimizedCPUConfig() throws InterruptedException {
-        int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
-        int numberOfEvents = 200_000;
+
+        int numberOfEvents = 300_000;
+
         runLoadTest(EventRouters
             .createWithEventType(String.class)
-            .cpuOptimized()
+            .customThreadPool(ThreadPools.newDynamicThreadPool())
             .build(),
-            numberOfEvents, simulatedWorkDelayMs);
+            MEDIUM_SUBSCRIBER_COUNT,
+            numberOfEvents,
+            CPU_DELAY_MS);
     }
 
     /**
@@ -65,7 +83,6 @@ class EventRouterLoadTest {
     @Disabled("load test")
     void testDefaultModifiableRouterForCPU() throws InterruptedException {
 
-        int simulatedWorkDelayMs = 0; // We want to test throughput, so no simulated delay.
         int numberOfEvents = 50_000;
 
         ModifiableEventRouter<String> modifiableRouter = EventRouters
@@ -76,67 +93,55 @@ class EventRouterLoadTest {
         // Adapt it.
         ModifiableEventRouterAdapter<String> adapter = new ModifiableEventRouterAdapter<>(modifiableRouter);
 
-        runLoadTest(adapter, numberOfEvents, simulatedWorkDelayMs);
+        runLoadTest(adapter, MEDIUM_SUBSCRIBER_COUNT, numberOfEvents, CPU_DELAY_MS);
     }
 
     /**
      * Test throughput of the default config, assuming it's an IO-bound system.
      * The default should be multi-threaded (which is ideal for IO).
+     * 24k / sec.
      */
     @Test
     @Disabled("load test")
-    void testDefaultIOConfig() throws InterruptedException {
-        int simulatedWorkDelayMs = 3; // Let's say each task takes 3ms to complete.
-        int numberOfEvents = 50_00;
+    void testHighSubscriberConfig() throws InterruptedException {
+
+        int numberOfEvents = 1000;
+
         runLoadTest(EventRouters
             .createWithEventType(String.class)
+            .maxAsync()
             .build(),
-            numberOfEvents, simulatedWorkDelayMs);
+            HIGH_SUBSCRIBER_COUNT,
+            numberOfEvents,
+            NETWORK_DELAY_MS);
     }
 
     /**
      * Test throughput of the default config, assuming it's an IO-bound system.
+     * 24k / sec.
      */
     @Test
     @Disabled("load test")
-    void testSyncIOConfig() throws InterruptedException {
-        int simulatedWorkDelayMs = 3; // Let's say each task takes 3ms to complete.
-        int numberOfEvents = 10_000;
+    void testBadHighSubscriberConfig() throws InterruptedException {
+
+        int numberOfEvents = 1000;
+
         runLoadTest(EventRouters
             .createWithEventType(String.class)
-            .cpuOptimized() // Whoops don't do this. Only doing this to test performance difference.
+            .maxAsync() // Whoops don't do this. Only doing this to test performance difference.
             .build(),
-            numberOfEvents, simulatedWorkDelayMs);
-    }
-
-    /**
-     * Test optimized settings for an IO-bound system.
-     */
-    @Test
-    @Disabled("load test")
-    void testRecommendedIOConfig() throws InterruptedException {
-
-        int simulatedWorkDelayMs = 3; // Let's say each task takes 3ms to complete.
-        int threadPoolSize = 1000;    // For large IO-bound systems we recommend around 1000 threads.
-        int numberOfEvents = 10_000;
-
-        EventRouter<String> eventRouter = EventRouters.createWithEventType(String.class)
-            .maxThreadPoolSize(threadPoolSize)
-            .build();
-        runLoadTest(eventRouter, numberOfEvents, simulatedWorkDelayMs);
+            HIGH_SUBSCRIBER_COUNT,
+            numberOfEvents,
+            NETWORK_DELAY_MS);
     }
 
     private void runLoadTest(
         EventRouter<String> eventRouter,
+        int subscriberCount,
         int eventCount,
         int eventDelayMs)
         throws InterruptedException {
 
-        // Let's see how fast we can chew through these events.
-        // The number delivered is: eventCount * subscriberCount. 950k / sec.
-        //
-        // Most events would have maybe a handful of subscribers... we'll use 100.
-        int subscriberCount = 100;
         // We'll use a CountDownLatch to wait for all subscribers to finish.
         CountDownLatch latch = new CountDownLatch(subscriberCount);
 
@@ -221,8 +226,8 @@ class EventRouterLoadTest {
         }
 
         private void onStringEvent(String strValue) {
-            if (counter.incrementAndGet() == expectedTotal) latch.countDown();
             EventUtils.sleep(eventDelayMs);
+            if (counter.incrementAndGet() == expectedTotal) latch.countDown();
         }
 
         public long getCounter() {
