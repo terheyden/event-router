@@ -14,37 +14,19 @@ import io.vavr.CheckedFunction1;
 public interface EventQuery<I, O> extends EventSubscriber {
 
     /**
-     * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
+     * Subscribe to receive events sent by this router.
      *
-     * @param eventType Events are defined by their class type.
-     *                  This is the type of event that the handler will be subscribed to.
+     * @param eventHandler The event handler to call when an event is received.
      * @return A UUID that can later be used to unsubscribe.
      */
     UUID subscribe(CheckedFunction1<I, O> eventHandler);
 
     /**
-     * Publish the given event to all subscribers of the event object's type.
-     * This is a non-blocking call; events are always published asynchronously.
-     * <p>
-     * Example:
-     * <pre>
-     * {@code
-     * // Subscribe to all String events:
-     * eventRouter.subscribe(String.class, System.out::println);
-     * // Publish a String event:
-     * eventRouter.publish("Hello World!");
-     * }
-     * </pre>
-     * Remember that if you're publishing a subclass of an event type,
-     * you'll need to cast it to the correct type:
-     * <pre>
-     * {@code
-     * eventRouter.subscribe(MainClass.class, this::handleMainClass);
-     * eventRouter.publish((MainClass) subClassObj);
-     * }
-     * </pre>
+     * A specialized form of {@link EventRouter#publish(Object)}. Publish the given event object
+     * to all subscribers, and expect a response.
      *
-     * @param event The event to send to all subscribers
+     * @param eventObj The event object to publish.
+     * @param responseHandler callback function to call when a response object is received.
      */
     void query(I eventObj, CheckedConsumer<O> responseHandler);
 }

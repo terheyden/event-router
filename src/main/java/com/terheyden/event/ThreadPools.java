@@ -25,10 +25,11 @@ public final class ThreadPools {
      */
     public static ThreadPoolExecutor newDynamicThreadPool(int maxThreadCount) {
 
+        // BTW TPE prefers new threads until core count is reached.
         ThreadPoolExecutor pool = new ThreadPoolExecutor(
             maxThreadCount,               // We don't want core + extra threads, just always use core.
             maxThreadCount,               // Core count and max count are the same.
-            KEEP_ALIVE_SECS,              // TPE prefers new threads until core count is reached.
+            KEEP_ALIVE_SECS,              // Idle threads will hang out this many secs.
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>()); // Queue is unbounded so no messages are lost.
 
