@@ -7,11 +7,12 @@ import java.util.concurrent.ThreadPoolExecutor;
  * If event {@code MyEvent} is published and there are 3 subscribers,
  * then 3 sendEventToSubscribers tasks are created and run on the thread pool in this publisher.
  */
-class ThreadPoolSendStrategy<T> implements SendEventStrategy<T> {
+class ThreadPoolSendStrategy<T> extends ExceptionHandlingSendEventStrategy<T> {
 
     private final ThreadPoolExecutor threadPool;
 
-    public ThreadPoolSendStrategy(ThreadPoolExecutor threadPool) {
+    ThreadPoolSendStrategy(SubscriberExceptionHandler exceptionHandler, ThreadPoolExecutor threadPool) {
+        super(exceptionHandler);
         this.threadPool = threadPool;
     }
 
@@ -22,16 +23,14 @@ class ThreadPoolSendStrategy<T> implements SendEventStrategy<T> {
             .stream()
             .map(sub -> (EventRouterSubscription<T>) sub)
             .forEach(sub ->
-            threadPool.execute(() ->
-                sub.getEventHandler().unchecked().accept(eventRequest.getEventObj())));
+            threadPool.execute(() -> sendEventToSubscriber(sub, eventRequest)));
     }
 
-    @Override
-    public String getMetrics() {
-        return EventUtils.threadReport(threadPool);
-    }
-
-    public ThreadPoolExecutor getThreadPool() {
-        return threadPool;
+    private void sendEventToSubscriber(EventRouterSubscription<T> sub, EventRequest<? extends T> eventRequest) {
+        try {
+            sub.getEventHandler().unchecked().accept(eventRequest.getEventObj());
+        } catch (Exception e) {
+            handleException(e, eventRequest);
+        }
     }
 }

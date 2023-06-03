@@ -1,5 +1,6 @@
 package com.terheyden.event;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,19 +20,20 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 class EventRouterTest {
 
     private static final String HELLO = "hello";
+    private static final String WORLD = "world";
 
-    private EventRouter<String> router;
+    private EventRouter<String> strRouter;
 
     @BeforeEach
     void beforeEach() {
-        router = EventRouters.createWithEventType(String.class).build();
+        strRouter = EventRouters.createWithEventType(String.class).build();
     }
 
     @Test
     @DisplayName("Base case — sendEventToSubscribers one event, subscribe to it, and receive it")
     void testBaseCase() {
 
-        List<String> results = publish(router, HELLO);
+        List<String> results = publish(strRouter, HELLO);
         assertThat(results).hasSize(1);
         assertThat(results.get(0)).isEqualTo(HELLO);
     }
@@ -40,28 +42,48 @@ class EventRouterTest {
     void testUnsubscribe() {
 
         AtomicInteger counter = new AtomicInteger(0);
-        assertThat(router.getSubscriptions()).isEmpty();
+        assertThat(strRouter.getSubscriptions()).isEmpty();
 
-        UUID subscriptionId = router.subscribe(e -> counter.incrementAndGet());
+        UUID subscriptionId = strRouter.subscribe(e -> counter.incrementAndGet());
 
-        router.publish(HELLO);
-        awaitEmpty(router);
-
+        strRouter.publish(HELLO);
+        awaitEmpty(strRouter);
         assertThat(counter.get()).isEqualTo(1);
-        router.unsubscribe(subscriptionId);
-        assertThat(router.getSubscriptions()).isEmpty();
+
+        counter.set(0);
+        strRouter.unsubscribe(subscriptionId);
+        assertThat(strRouter.getSubscriptions()).isEmpty();
+        strRouter.publish(HELLO);
+        awaitEmpty(strRouter);
+        assertThat(counter.get()).isEqualTo(0);
     }
 
     @Test
     void testNoSubscribersEvent() {
 
-            assertThatNoException().isThrownBy(() -> router.publish(HELLO));
-            awaitEmpty(router);
+            assertThatNoException().isThrownBy(() -> strRouter.publish(HELLO));
+            awaitEmpty(strRouter);
     }
 
     @Test
     void testSubscriberException() {
-        // Special event if subscriber throws.
-        // Should not interrupt other subscribers.
+
+        // Sandwich the exception between two other subscribers
+        // so we can verify that the exception doesn't stop the event from being sent to the other subscribers.
+        List<String> list1 = new ArrayList<>();
+        strRouter.subscribe(list1::add);
+
+        // Set up the router to throw.
+        strRouter.subscribe(str -> {
+            throw new RuntimeException("IGNORE: " + str);
+        });
+
+        List<String> list2 = new ArrayList<>();
+        strRouter.subscribe(list2::add);
+
+        publish(strRouter, HELLO, WORLD);
+
+        assertThat(list1).containsExactly(HELLO, WORLD);
+        assertThat(list2).containsExactly(HELLO, WORLD);
     }
 }

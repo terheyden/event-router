@@ -14,12 +14,10 @@ public final class Mocks {
 
     static PublishRequest<String> publishRequest(EventSubscription subscription, String event) {
 
-        PublishRequest<String> request = new PublishRequest<>(
+        return new PublishRequest<>(
             new EventRequest<>(event),
-            new SequentialSendStrategy<>(),
+            new SequentialSendStrategy<>(EventRouters.DEFAULT_EXCEPTION_HANDLER),
             queue(subscription));
-
-        return request;
     }
 
     static Queue<EventSubscription> queue(EventSubscription subscription) {

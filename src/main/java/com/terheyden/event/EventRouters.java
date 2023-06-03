@@ -3,10 +3,20 @@ package com.terheyden.event;
 import javax.annotation.Nullable;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.slf4j.Logger;
+
+import static org.slf4j.LoggerFactory.getLogger;
+
 /**
  * Abstract builder class for creating event routers.
  */
 public final class EventRouters {
+
+    private static final Logger LOG = getLogger(EventRouters.class);
+
+    // Package-private so tests can use it also, maybe also constructors can default to it.
+    static final SubscriberExceptionHandler DEFAULT_EXCEPTION_HANDLER = (err, eventObj) ->
+        LOG.error("Subscriber threw exception while handling event: {}", eventObj, err);
 
     private EventRouters() {
         // Private since this class shouldn't be instantiated.
@@ -27,8 +37,8 @@ public final class EventRouters {
     public static class EventRouterBuilder<T> {
 
         private int maxThreadPoolSize = EventRouterGlobals.DEFAULT_THREADPOOL_SIZE;
-
         @Nullable private ThreadPoolExecutor customThreadPool = null;
+        private SubscriberExceptionHandler exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
 
         /**
          * The default for a standard event router is {@link ThreadPoolSendStrategy}, since
@@ -83,6 +93,15 @@ public final class EventRouters {
             return this;
         }
 
+        /**
+         * Set a custom exception handler for when an individual subscriber throws an exception
+         * while handling an event.
+         */
+        public EventRouterBuilder<T> exceptionHandler(SubscriberExceptionHandler exceptionHandler) {
+            this.exceptionHandler = exceptionHandler;
+            return this;
+        }
+
         public EventRouter<T> build() {
 
             ThreadPoolExecutor threadPool = customThreadPool == null
@@ -90,8 +109,8 @@ public final class EventRouters {
                 : customThreadPool;
 
             SendEventStrategy<T> sendStrategy = isMaxAsync
-                ? new ThreadPoolSendStrategy<>(threadPool)
-                : new SequentialSendStrategy<>();
+                ? new ThreadPoolSendStrategy<>(exceptionHandler, threadPool)
+                : new SequentialSendStrategy<>(exceptionHandler);
 
             return new EventRouterImpl<>(threadPool, sendStrategy);
         }
@@ -104,7 +123,6 @@ public final class EventRouters {
     public static class EventQueryBuilder<I, O> {
 
         private int maxThreadPoolSize;
-
         @Nullable private ThreadPoolExecutor customThreadPool;
 
         /**
@@ -114,6 +132,8 @@ public final class EventRouters {
          * This var will determine the approach we build with.
          */
         private boolean isMaxAsync = false;
+
+        private SubscriberExceptionHandler exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
 
         EventQueryBuilder(int maxThreadPoolSize, @Nullable ThreadPoolExecutor customThreadPool) {
             this.maxThreadPoolSize = maxThreadPoolSize;
@@ -139,6 +159,15 @@ public final class EventRouters {
             return this;
         }
 
+        /**
+         * Set a custom exception handler for when an individual subscriber throws an exception
+         * while handling an event.
+         */
+        public EventQueryBuilder<I, O> exceptionHandler(SubscriberExceptionHandler exceptionHandler) {
+            this.exceptionHandler = exceptionHandler;
+            return this;
+        }
+
         public EventQuery<I, O> build() {
 
             ThreadPoolExecutor threadPool = customThreadPool == null
@@ -146,8 +175,8 @@ public final class EventRouters {
                 : customThreadPool;
 
             SendEventStrategy<I> sendStrategy = isMaxAsync
-                ? new EventQuerySendAsyncStrategy<>(threadPool)
-                : new EventQuerySendSequentialStrategy<>();
+                ? new EventQuerySendAsyncStrategy<>(exceptionHandler, threadPool)
+                : new EventQuerySendSequentialStrategy<>(exceptionHandler);
 
             return new EventQueryImpl<>(threadPool, sendStrategy);
         }
@@ -160,8 +189,8 @@ public final class EventRouters {
     public static class ModifiableEventRouterBuilder<T> {
 
         private int maxThreadPoolSize;
-
         @Nullable private ThreadPoolExecutor customThreadPool;
+        private SubscriberExceptionHandler exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
 
         ModifiableEventRouterBuilder(int maxThreadPoolSize, @Nullable ThreadPoolExecutor customThreadPool) {
             this.maxThreadPoolSize = maxThreadPoolSize;
@@ -178,13 +207,22 @@ public final class EventRouters {
             return this;
         }
 
+        /**
+         * Set a custom exception handler for when an individual subscriber throws an exception
+         * while handling an event.
+         */
+        public ModifiableEventRouterBuilder<T> exceptionHandler(SubscriberExceptionHandler exceptionHandler) {
+            this.exceptionHandler = exceptionHandler;
+            return this;
+        }
+
         public ModifiableEventRouter<T> build() {
 
             ThreadPoolExecutor threadPool = customThreadPool == null
                 ? createThreadPool(maxThreadPoolSize)
                 : customThreadPool;
 
-            return new ModifiableEventRouterImpl<>(threadPool);
+            return new ModifiableEventRouterImpl<>(exceptionHandler, threadPool);
         }
     }
 }

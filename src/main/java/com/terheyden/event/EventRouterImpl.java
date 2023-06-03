@@ -12,7 +12,7 @@ import io.vavr.CheckedConsumer;
  * Not static, so you can have multiple event routers.
  * You can always make it static if they want.
  */
-class EventRouterImpl<T> extends BaseEventRouter<T> implements EventRouter<T> {
+public class EventRouterImpl<T> extends BaseEventRouter<T> implements EventRouter<T> {
 
     EventRouterImpl(ThreadPoolExecutor threadPoolExecutor, SendEventStrategy<T> sendStrategy) {
         super(threadPoolExecutor, sendStrategy);

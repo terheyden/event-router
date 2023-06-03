@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 
@@ -20,6 +21,12 @@ public final class EventTester {
         // Private since this class shouldn't be instantiated.
     }
 
+    /**
+     * Publish the given events to the specified router.
+     * Block (for 3 seconds) until all events to go through.
+     *
+     * @return a list of all events that were published and received
+     */
     public static <T> List<T> publish(EventRouter<T> router, T... events) {
         try {
 
@@ -37,7 +44,7 @@ public final class EventTester {
                 router.publish(event);
             }
 
-            outputLatch.await();
+            outputLatch.await(3, TimeUnit.SECONDS);
             return outputs;
 
         } catch (InterruptedException e) {
@@ -49,7 +56,10 @@ public final class EventTester {
         throw new RuntimeException("Exception while processing event: " + event);
     }
 
-    public static <T> void awaitEmpty(EventSubscriber eventRouter) {
+    /**
+     * Waits for the event router to have no more active threads.
+     */
+    public static void awaitEmpty(EventSubscriber eventRouter) {
         while (eventRouter.getThreadPool().getActiveCount() > 0) {
             TestUtils.sleep(100);
         }

@@ -34,7 +34,8 @@ final class SendStrategies {
     @SuppressWarnings("unchecked")
     static <T> void sendModifiableEventToSubscribers(
         EventRequest<T> eventRequest,
-        Collection<? extends EventSubscription> subscribers) {
+        Collection<? extends EventSubscription> subscribers,
+        SubscriberExceptionHandler exceptionHandler) {
 
         @Nullable T eventObj = eventRequest.getEventObj();
 
@@ -50,7 +51,20 @@ final class SendStrategies {
             }
 
             ModifiableEventSubscription<T> sub = (ModifiableEventSubscription<T>) subscriber;
-            eventObj = sub.getEventHandler().unchecked().apply(eventObj);
+            eventObj = sendEventToSubscriber(sub, eventObj, exceptionHandler);
+        }
+    }
+
+    private static <T> T sendEventToSubscriber(
+        ModifiableEventSubscription<T> sub,
+        T eventObj,
+        SubscriberExceptionHandler exceptionHandler) {
+
+        try {
+            return sub.getEventHandler().unchecked().apply(eventObj);
+        } catch (Exception e) {
+            exceptionHandler.handleException(e, eventObj);
+            return eventObj;
         }
     }
 }

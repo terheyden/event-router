@@ -60,5 +60,6 @@ eventRouter.publish("Hello, world!");
 ```
 
 # TODO
-* Guarantee same-thread delivery,
-  so the lock should only avoid from the same thread
+* exception handling
+* publish metadata?
+* Gradle

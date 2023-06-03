@@ -40,13 +40,13 @@ class EventRouterLoadTest {
 
     /**
      * Test throughput of the default config, assuming it's a CPU-intensive system.
-     * 855k / sec.
+     * 2M / sec.
      */
     @Test
     @Disabled("load test")
     void testDefaultCPUConfig() throws InterruptedException {
 
-        int numberOfEvents = 80_000;
+        int numberOfEvents = 100_000;
 
         runLoadTest(EventRouters
             .createWithEventType(String.class)
@@ -58,7 +58,7 @@ class EventRouterLoadTest {
 
     /**
      * Test throughput of the default config, but they've specified the cpu-optimized flag.
-     * 2.5M / sec.
+     * 3.2M / sec.
      */
     @Test
     @Disabled("load test")

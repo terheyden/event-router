@@ -13,7 +13,7 @@ import io.vavr.CheckedFunction1;
  * Not static, so you can have multiple event routers.
  * You can always make it static if they want.
  */
-class EventQueryImpl<I, O> extends BaseEventRouter<I> implements EventQuery<I, O> {
+public class EventQueryImpl<I, O> extends BaseEventRouter<I> implements EventQuery<I, O> {
 
     EventQueryImpl(ThreadPoolExecutor threadPoolExecutor, SendEventStrategy<I> sendStrategy) {
         super(threadPoolExecutor, sendStrategy);

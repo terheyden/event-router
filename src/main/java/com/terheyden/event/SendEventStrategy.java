@@ -19,12 +19,10 @@ public interface SendEventStrategy<T> {
      * the order in which they were subscribed (not that the publisher needs to obey that
      * depending on the strategy, but it could).
      *
-     * @param event       The event to deliver to each {@link EventRouterSubscription}.
-     * @param subscribers The concurrent collection of subscribers to deliver the event to, guaranteed to be non-empty.
+     * @param eventRequest The event to deliver to each {@link EventRouterSubscription}.
+     * @param subscribers The collection of subscribers to deliver the event to, guaranteed to be non-empty.
      */
-    void sendEventToSubscribers(EventRequest<? extends T> eventRequest, Collection<? extends EventSubscription> subscribers);
-
-    default String getMetrics() {
-        return getClass().getSimpleName() + " has no metrics data.";
-    }
+    void sendEventToSubscribers(
+        EventRequest<? extends T> eventRequest,
+        Collection<? extends EventSubscription> subscribers);
 }

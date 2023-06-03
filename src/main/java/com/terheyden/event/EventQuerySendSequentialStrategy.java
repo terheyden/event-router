@@ -5,7 +5,11 @@ import java.util.Collection;
 /**
  * Publishes events to subscribers in order, on the calling thread.
  */
-class EventQuerySendSequentialStrategy<I, O> implements SendEventStrategy<I> {
+class EventQuerySendSequentialStrategy<I, O> extends ExceptionHandlingSendEventStrategy<I> {
+
+    EventQuerySendSequentialStrategy(SubscriberExceptionHandler exceptionHandler) {
+        super(exceptionHandler);
+    }
 
     @Override
     @SuppressWarnings("unchecked")
