@@ -3,8 +3,6 @@ package com.terheyden.event;
 import javax.annotation.Nullable;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.slf4j.Logger;
-
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -12,7 +10,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public final class EventRouters {
 
-    private static final Logger LOG = getLogger(EventRouters.class);
+    private static final org.slf4j.Logger LOG = getLogger(EventRouters.class);
 
     // Package-private so tests can use it also, maybe also constructors can default to it.
     static final SubscriberExceptionHandler DEFAULT_EXCEPTION_HANDLER = (err, eventObj) ->
@@ -41,10 +39,8 @@ public final class EventRouters {
         private SubscriberExceptionHandler exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
 
         /**
-         * The default for a standard event router is {@link ThreadPoolSendStrategy}, since
-         * we assume that most services are network-bound and not CPU-bound. For CPU-bound
-         * services, we recommend {@link SequentialSendStrategy}.
-         * This var will determine the approach we build with.
+         * In some scenarios, like if there are many long-running subscribers,
+         * it may be more performant to send events to subscribers asynchronously.
          */
         private boolean isMaxAsync = false;
 
@@ -52,11 +48,21 @@ public final class EventRouters {
             // Package private.
         }
 
+        /**
+         * The max thread pool size used by this router's thread pool.
+         * The default is {@link EventRouterGlobals#DEFAULT_THREADPOOL_SIZE}.
+         */
         public EventRouterBuilder<T> maxThreadPoolSize(int maxThreadPoolSize) {
             this.maxThreadPoolSize = maxThreadPoolSize;
             return this;
         }
 
+        /**
+         * By default, a {@link ThreadPools#newDynamicThreadPool(int)} is used. You can configure
+         * the pool size by specifying {@link #maxThreadPoolSize(int)}. If you want to use your own
+         * completely custom thread pool, you can specify it here. This is also a good setting to
+         * use if you wish to share a single thread pool between many event routers.
+         */
         public EventRouterBuilder<T> customThreadPool(ThreadPoolExecutor customThreadPool) {
             this.customThreadPool = customThreadPool;
             return this;
@@ -87,6 +93,7 @@ public final class EventRouters {
         /**
          * This is an advanced setting: the default thread configuration is optimized for most use cases.
          * Use this setting if you expect to have many long-running subscribers and very few events.
+         * Setting this disables {@link #publishInOrder()}.
          */
         public EventRouterBuilder<T> maxAsync() {
             isMaxAsync = true;
@@ -94,8 +101,19 @@ public final class EventRouters {
         }
 
         /**
+         * If true, events will be delivered to subscribers
+         * in the order that they subscribed to the event.
+         * The default is true, since in most cases this is also the most performant setting.
+         * Setting this disables {@link #maxAsync()}.
+         */
+        public EventRouterBuilder<T> publishInOrder() {
+            isMaxAsync = false;
+            return this;
+        }
+
+        /**
          * Set a custom exception handler for when an individual subscriber throws an exception
-         * while handling an event.
+         * while handling an event. The default is to log the exception at ERROR level.
          */
         public EventRouterBuilder<T> exceptionHandler(SubscriberExceptionHandler exceptionHandler) {
             this.exceptionHandler = exceptionHandler;
@@ -126,10 +144,8 @@ public final class EventRouters {
         @Nullable private ThreadPoolExecutor customThreadPool;
 
         /**
-         * The default for a standard event router is {@link ThreadPoolSendStrategy}, since
-         * we assume that most services are network-bound and not CPU-bound. For CPU-bound
-         * services, we recommend {@link SequentialSendStrategy}.
-         * This var will determine the approach we build with.
+         * In some scenarios, like if there are many long-running subscribers,
+         * it may be more performant to send events to subscribers asynchronously.
          */
         private boolean isMaxAsync = false;
 
@@ -140,11 +156,21 @@ public final class EventRouters {
             this.customThreadPool = customThreadPool;
         }
 
+        /**
+         * The max thread pool size used by this router's thread pool.
+         * The default is {@link EventRouterGlobals#DEFAULT_THREADPOOL_SIZE}.
+         */
         public EventQueryBuilder<I, O> maxThreadPoolSize(int maxThreadPoolSize) {
             this.maxThreadPoolSize = maxThreadPoolSize;
             return this;
         }
 
+        /**
+         * By default, a {@link ThreadPools#newDynamicThreadPool(int)} is used. You can configure
+         * the pool size by specifying {@link #maxThreadPoolSize(int)}. If you want to use your own
+         * completely custom thread pool, you can specify it here. This is also a good setting to
+         * use if you wish to share a single thread pool between many event routers.
+         */
         public EventQueryBuilder<I, O> customThreadPool(ThreadPoolExecutor customThreadPool) {
             this.customThreadPool = customThreadPool;
             return this;
@@ -153,6 +179,7 @@ public final class EventRouters {
         /**
          * This is an advanced setting: the default thread configuration is optimized for most use cases.
          * Use this setting if you expect to have many long-running subscribers and very few events.
+         * Setting this disables {@link #publishInOrder()}.
          */
         public EventQueryBuilder<I, O> maxAsync() {
             isMaxAsync = true;
@@ -160,8 +187,19 @@ public final class EventRouters {
         }
 
         /**
+         * If true, events will be delivered to subscribers
+         * in the order that they subscribed to the event.
+         * The default is true, since in most cases this is also the most performant setting.
+         * Setting this disables {@link #maxAsync()}.
+         */
+        public EventQueryBuilder<I, O> publishInOrder() {
+            isMaxAsync = false;
+            return this;
+        }
+
+        /**
          * Set a custom exception handler for when an individual subscriber throws an exception
-         * while handling an event.
+         * while handling an event. The default is to log the exception at ERROR level.
          */
         public EventQueryBuilder<I, O> exceptionHandler(SubscriberExceptionHandler exceptionHandler) {
             this.exceptionHandler = exceptionHandler;
@@ -197,11 +235,21 @@ public final class EventRouters {
             this.customThreadPool = customThreadPool;
         }
 
+        /**
+         * The max thread pool size used by this router's thread pool.
+         * The default is {@link EventRouterGlobals#DEFAULT_THREADPOOL_SIZE}.
+         */
         public ModifiableEventRouterBuilder<T> maxThreadPoolSize(int maxThreadPoolSize) {
             this.maxThreadPoolSize = maxThreadPoolSize;
             return this;
         }
 
+        /**
+         * By default, a {@link ThreadPools#newDynamicThreadPool(int)} is used. You can configure
+         * the pool size by specifying {@link #maxThreadPoolSize(int)}. If you want to use your own
+         * completely custom thread pool, you can specify it here. This is also a good setting to
+         * use if you wish to share a single thread pool between many event routers.
+         */
         public ModifiableEventRouterBuilder<T> customThreadPool(ThreadPoolExecutor customThreadPool) {
             this.customThreadPool = customThreadPool;
             return this;
@@ -209,7 +257,7 @@ public final class EventRouters {
 
         /**
          * Set a custom exception handler for when an individual subscriber throws an exception
-         * while handling an event.
+         * while handling an event. The default is to log the exception at ERROR level.
          */
         public ModifiableEventRouterBuilder<T> exceptionHandler(SubscriberExceptionHandler exceptionHandler) {
             this.exceptionHandler = exceptionHandler;

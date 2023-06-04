@@ -2,6 +2,7 @@ package com.terheyden.event;
 
 import java.util.UUID;
 
+import io.vavr.CheckedConsumer;
 import io.vavr.CheckedFunction1;
 
 /**
@@ -17,11 +18,16 @@ public interface ModifiableEventRouter<T> extends EventSubscriber {
     /**
      * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
      *
-     * @param eventType Events are defined by their class type.
-     *                  This is the type of event that the handler will be subscribed to.
      * @return A UUID that can later be used to unsubscribe.
      */
     UUID subscribe(CheckedFunction1<T, T> eventHandler);
+
+    /**
+     * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
+     *
+     * @return A UUID that can later be used to unsubscribe.
+     */
+    UUID subscribeReadOnly(CheckedConsumer<T> eventHandler);
 
     /**
      * Publish the given event to all subscribers of the event object's type.

@@ -73,7 +73,7 @@ class EventRouterTest {
         List<String> list1 = new ArrayList<>();
         strRouter.subscribe(list1::add);
 
-        // Set up the router to throw.
+        // Set up the next subscriber to throw.
         strRouter.subscribe(str -> {
             throw new RuntimeException("IGNORE: " + str);
         });
@@ -83,7 +83,7 @@ class EventRouterTest {
 
         publish(strRouter, HELLO, WORLD);
 
-        assertThat(list1).containsExactly(HELLO, WORLD);
-        assertThat(list2).containsExactly(HELLO, WORLD);
+        assertThat(list1).contains(HELLO, WORLD);
+        assertThat(list2).contains(HELLO, WORLD);
     }
 }

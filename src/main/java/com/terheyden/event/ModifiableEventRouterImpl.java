@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
+import io.vavr.CheckedConsumer;
 import io.vavr.CheckedFunction1;
 
 /**
@@ -21,6 +22,18 @@ public class ModifiableEventRouterImpl<T> extends BaseEventRouter<T> implements 
     @Override
     public UUID subscribe(CheckedFunction1<T, T> eventHandler) {
         ModifiableEventSubscription<T> subscription = new ModifiableEventSubscription<>(eventHandler);
+        getSubscriberManager().subscribe(subscription);
+        return subscription.getSubscriptionId();
+    }
+
+    @Override
+    public UUID subscribeReadOnly(CheckedConsumer<T> eventHandler) {
+
+        ModifiableEventSubscription<T> subscription = new ModifiableEventSubscription<>(eventObj -> {
+            eventHandler.accept(eventObj);
+            return eventObj;
+        });
+
         getSubscriberManager().subscribe(subscription);
         return subscription.getSubscriptionId();
     }

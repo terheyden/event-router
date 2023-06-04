@@ -3,41 +3,38 @@
 _Simple, fast, flexible event router / event bus for Java._
 
 ## What is it?
-Coordinating components and services via events, also known as
-event-driven, publish-subscribe, message-driven, event-based,
-or [the reactor pattern](https://en.wikipedia.org/wiki/Reactor_pattern),
-is an important architectural pattern for building loosely coupled
-applications.
+An extremely fast and lightweight event bus for Java libraries and applications.
+Decouple your components by using event-driven design.
 
-EventRouter is a Java library that provides event-based messaging
-in a lightweight, fast, and highly customizable way.
-
+## Example Usage
 ```java
-// Subscribe to an event — events are differentiated by class:
-eventRouter.subscribe(UserLoginEvent.class, this::handleUserLogin);
+// Let's make a simple "Hello World" event router.
+// This event says, "I have a printable string," and notifies all subscribers.
+EventRouter<String> printableStringEvent = EventRouters
+    .createWithEventType(String.class)
+    .build();
 
-// Send an event:
-eventRouter.publish(userLoginEvent);
+// We'll make a simple subscriber that prints the string.
+printableStringEvent.subscribe(str -> System.out.println("Received: " + str));
+
+// Publish a String event to test.
+printableStringEvent.publish("Hello, world!");
 ```
 
-## Why use it?
-Coordinating components, services, and microservices by means of event routing
-is the core of good software design (see Ports and Adapters, Onion Architecture, DDD)
-and the cornerstone of cloud computing.
+## EventRouter Features
 
-### EventRouter features
-
-* Tiny (6k), powerful, and easy to use
-* Fully custom thread support
-  * Use our finely-tuned threadpools, or go ahead and supply your own `ExecutorService`
-* No annotations required
-  * No reflection, no classpath scanning, less source code clutter
-* Subscribers can self-register during object construction
-  * Subscriptions are simply lambda functions (closures)
-* JDK 1.8+ compatible
-  * If you're stuck using JDK 1.8, we've got you covered
+* Tiny (6k)
+* Fast — the default config will process over 2M events per second (see `EventRouterLoadTest.java`)
+* Flexible without messing with your source code
+    * No annotations required
+    * No special interfaces or unique classes necessary
+    * No reflection, no classpath scanning
+* JDK 11+ compatible
 
 ## How to use
+
+One simple dependency:
+
 ### Maven
 ```xml
 <dependency>
@@ -45,18 +42,6 @@ and the cornerstone of cloud computing.
     <artifactId>event-router</artifactId>
     <version>0.0.1</version>
 </dependency>
-```
-
-### Your first event router
-```java
-// Let's make a simple event router.
-EventRouter eventRouter = new EventRouter();
-
-// Let's subscribe to String events, and print them.
-eventRouter.subscribe(String.class, str -> System.out.println("Received: " + str));
-
-// Sweet, now let's sendEventToSubscribers our first event.
-eventRouter.publish("Hello, world!");
 ```
 
 # TODO
