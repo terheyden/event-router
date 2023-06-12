@@ -5,8 +5,6 @@ import java.util.UUID;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
-import io.vavr.CheckedConsumer;
-
 /**
  * EventRouter class.
  * Not static, so you can have multiple event routers.

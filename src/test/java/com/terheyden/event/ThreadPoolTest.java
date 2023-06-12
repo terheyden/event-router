@@ -11,8 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
-import io.vavr.CheckedRunnable;
-
 import static java.lang.System.out;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -68,7 +66,7 @@ public class ThreadPoolTest {
                 readyLatch.await();     // Wait for everyone else to be ready.
                 runnable.run();
                 doneLatch.countDown();  // Tell the world we're done.
-            }).unchecked());
+            }));
         }
 
         // Wait for the loaders to synchronize, then run, then be done.
@@ -99,17 +97,6 @@ public class ThreadPoolTest {
         private final String name;
 
         Fruit(String name) {
-            this.name = name;
-        }
-    }
-
-    /**
-     * Simple vegetable record.
-     */
-    static final class Vegetable {
-        private final String name;
-
-        Vegetable(String name) {
             this.name = name;
         }
     }

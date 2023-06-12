@@ -2,8 +2,6 @@ package com.terheyden.event;
 
 import java.util.UUID;
 
-import io.vavr.CheckedConsumer;
-
 /**
  * A standard {@link EventRouterImpl} subscription.
  * Has a UUID to identify it, and the handler to apply to incoming event objects.

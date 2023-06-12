@@ -2,8 +2,6 @@ package com.terheyden.event;
 
 import java.util.UUID;
 
-import io.vavr.CheckedConsumer;
-
 /**
  * A classic publish-subscribe event router.
  * Sends events to all subscribers using a thread pool.
@@ -16,8 +14,6 @@ public interface EventRouter<T> extends EventSubscriber {
     /**
      * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
      *
-     * @param eventType Events are defined by their class type.
-     *                  This is the type of event that the handler will be subscribed to.
      * @return A UUID that can later be used to unsubscribe.
      */
     UUID subscribe(CheckedConsumer<T> eventHandler);

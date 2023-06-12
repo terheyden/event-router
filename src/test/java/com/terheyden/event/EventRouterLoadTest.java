@@ -14,8 +14,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
-import io.vavr.CheckedConsumer;
-
 import static java.lang.String.format;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -249,7 +247,7 @@ class EventRouterLoadTest {
         @Override
         public UUID subscribe(CheckedConsumer<T> eventHandler) {
             return modifiableEventRouter.subscribe(event -> {
-                eventHandler.unchecked().accept(event);
+                eventHandler.accept(event);
                 return event;
             });
         }

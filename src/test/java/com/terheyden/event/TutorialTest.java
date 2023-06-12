@@ -33,7 +33,7 @@ class TutorialTest {
     void tutorial2() {
 
         // You can also send events that return a response object.
-        // We call this an event query.
+        // We call this an "event query."
         // In this simple example, we'll publish a string event and expect the string length as a reply.
         EventQuery<String, Integer> stringLengthQuery = EventRouters
             .createWithEventType(String.class)
@@ -63,7 +63,7 @@ class TutorialTest {
             .modifiableEvents()
             .build();
 
-        // The first governor makes sure the ID is uppercase.
+        // The first subscriber ("governor") changes the ID to uppercase.
         userIdFoundEvent.subscribe(String::toUpperCase);
 
         // The second governor makes sure the ID has the proper length.

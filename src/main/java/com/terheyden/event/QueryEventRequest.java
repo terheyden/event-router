@@ -1,7 +1,5 @@
 package com.terheyden.event;
 
-import io.vavr.CheckedConsumer;
-
 /**
  * QueryEventRequest class.
  */

@@ -31,7 +31,7 @@ class SequentialSendStrategy<T> extends ExceptionHandlingSendEventStrategy<T> {
 
     private void sendEventToSubscriber(EventRouterSubscription<T> sub, EventRequest<? extends T> eventRequest) {
         try {
-            sub.getEventHandler().unchecked().accept(eventRequest.getEventObj());
+            sub.getEventHandler().accept(eventRequest.getEventObj());
         } catch (Exception e) {
             handleException(e, eventRequest);
         }

@@ -2,9 +2,6 @@ package com.terheyden.event;
 
 import java.util.UUID;
 
-import io.vavr.CheckedConsumer;
-import io.vavr.CheckedFunction1;
-
 /**
  * A publish-subscribe event router that sends query events that return a response.
  *
@@ -19,7 +16,7 @@ public interface EventQuery<I, O> extends EventSubscriber {
      * @param eventHandler The event handler to call when an event is received.
      * @return A UUID that can later be used to unsubscribe.
      */
-    UUID subscribe(CheckedFunction1<I, O> eventHandler);
+    UUID subscribe(CheckedFunction<I, O> eventHandler);
 
     /**
      * A specialized form of {@link EventRouter#publish(Object)}. Publish the given event object

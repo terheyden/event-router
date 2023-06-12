@@ -2,8 +2,6 @@ package com.terheyden.event;
 
 import java.util.UUID;
 
-import io.vavr.CheckedFunction1;
-
 /**
  * An {@link EventQueryImpl} subscription.
  * Has a UUID to identify it, and the handler to apply to incoming event objects.
@@ -11,17 +9,17 @@ import io.vavr.CheckedFunction1;
 final class EventQuerySubscription<I, O> implements EventSubscription {
 
     private final UUID subscriptionId;
-    private final CheckedFunction1<I, O> eventHandler;
+    private final CheckedFunction<I, O> eventHandler;
 
     EventQuerySubscription(
         UUID subscriptionId,
-        CheckedFunction1<I, O> eventHandler) {
+        CheckedFunction<I, O> eventHandler) {
 
         this.subscriptionId = subscriptionId;
         this.eventHandler = eventHandler;
     }
 
-    EventQuerySubscription(CheckedFunction1<I, O> eventHandler) {
+    EventQuerySubscription(CheckedFunction<I, O> eventHandler) {
         this(UUID.randomUUID(), eventHandler);
     }
 
@@ -30,7 +28,7 @@ final class EventQuerySubscription<I, O> implements EventSubscription {
         return subscriptionId;
     }
 
-    public CheckedFunction1<I, O> getEventHandler() {
+    public CheckedFunction<I, O> getEventHandler() {
         return eventHandler;
     }
 }

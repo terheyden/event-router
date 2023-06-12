@@ -5,9 +5,6 @@ import java.util.UUID;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
-import io.vavr.CheckedConsumer;
-import io.vavr.CheckedFunction1;
-
 /**
  * EventRouter class.
  * Not static, so you can have multiple event routers.
@@ -20,7 +17,7 @@ public class EventQueryImpl<I, O> extends BaseEventRouter<I> implements EventQue
     }
 
     @Override
-    public UUID subscribe(CheckedFunction1<I, O> eventHandler) {
+    public UUID subscribe(CheckedFunction<I, O> eventHandler) {
         EventQuerySubscription<I, O> subscription = new EventQuerySubscription<>(eventHandler);
         getSubscriberManager().subscribe(subscription);
         return subscription.getSubscriptionId();

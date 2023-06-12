@@ -25,10 +25,10 @@ final class SendStrategies {
         QueryEventRequest<I, O> queryRequest = (QueryEventRequest<I, O>) eventRequest;
 
         LOG.debug("Sending event query to subscriber.");
-        O queryResponse = sub.getEventHandler().unchecked().apply(queryRequest.getEventObj());
+        O queryResponse = sub.getEventHandler().apply(queryRequest.getEventObj());
 
         LOG.debug("Sending query response back to caller: {}", queryResponse);
-        queryRequest.getCallback().unchecked().accept(queryResponse);
+        queryRequest.getCallback().accept(queryResponse);
     }
 
     @SuppressWarnings("unchecked")
@@ -61,7 +61,7 @@ final class SendStrategies {
         SubscriberExceptionHandler exceptionHandler) {
 
         try {
-            return sub.getEventHandler().unchecked().apply(eventObj);
+            return sub.getEventHandler().apply(eventObj);
         } catch (Exception e) {
             exceptionHandler.handleException(e, eventObj);
             return eventObj;

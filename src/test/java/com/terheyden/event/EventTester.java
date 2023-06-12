@@ -61,7 +61,7 @@ public final class EventTester {
      */
     public static void awaitEmpty(EventSubscriber eventRouter) {
         while (eventRouter.getThreadPool().getActiveCount() > 0) {
-            TestUtils.sleep(100);
+            EventUtils.sleep(100);
         }
     }
 }

@@ -2,9 +2,6 @@ package com.terheyden.event;
 
 import java.util.UUID;
 
-import io.vavr.CheckedConsumer;
-import io.vavr.CheckedFunction1;
-
 /**
  * A publish-subsribe event router with modifiable events.
  * Subscribers are called in the order they subscribed,
@@ -20,7 +17,7 @@ public interface ModifiableEventRouter<T> extends EventSubscriber {
      *
      * @return A UUID that can later be used to unsubscribe.
      */
-    UUID subscribe(CheckedFunction1<T, T> eventHandler);
+    UUID subscribe(CheckedFunction<T, T> eventHandler);
 
     /**
      * When an event of type {@code eventClass} is published, {@code eventHandler} will be called.
