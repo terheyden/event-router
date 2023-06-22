@@ -23,13 +23,13 @@ printableStringEvent.publish("Hello, world!");
 
 ## EventRouter Features
 
-* Tiny (50k)
-* Fast — the default config will process around 2-4M events per second (see `EventRouterLoadTest.java`)
+* Tiny (46k)
+* Fast — the default config will process around 2-4M events per second on a modern laptop (see `EventRouterLoadTest.java`)
+* Easy to use
 * Flexible without messing with your source code
-    * No annotations required
-    * No special interfaces or unique classes necessary
-    * No reflection, no classpath scanning
-* JDK 11+ compatible
+    * No annotations, special interfaces or unique DTO classes necessary
+    * No reflection or classpath scanning
+* JDK 8+ compatible, for those of you stuck on Java 8
 
 ## How to use
 
@@ -40,7 +40,7 @@ One simple dependency:
 <dependency>
     <groupId>com.terheyden</groupId>
     <artifactId>event-router</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 
