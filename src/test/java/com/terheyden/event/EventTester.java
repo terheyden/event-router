@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 
+import static com.terheyden.event.EventUtils.sleep;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -60,8 +61,11 @@ public final class EventTester {
      * Waits for the event router to have no more active threads.
      */
     public static void awaitEmpty(EventSubscriber eventRouter) {
+
         while (eventRouter.getThreadPool().getActiveCount() > 0) {
-            EventUtils.sleep(100);
+            sleep(100);
         }
+        // Give it one final sleep to make sure all events have been processed.
+        sleep(250);
     }
 }
