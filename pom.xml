@@ -34,8 +34,8 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <junit-jupiter.version>5.9.1</junit-jupiter.version> <!-- org/junit/jupiter/junit-jupiter-api -->
-        <mockito.version>4.10.0</mockito.version> <!-- org/mockito/mockito-core -->
+        <junit-jupiter.version>5.10.0-M1</junit-jupiter.version> <!-- org/junit/jupiter/junit-jupiter-api -->
+        <mockito.version>5.4.0</mockito.version> <!-- org/mockito/mockito-core -->
     </properties>
 
     <dependencies>
@@ -47,7 +47,7 @@
             <version>4.7.3</version> <!-- com/github/spotbugs/spotbugs-annotations -->
             <optional>true</optional>
         </dependency>
-        <!-- SLF4J compatible with Logback -->
+        <!-- Just the log API -->
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -122,7 +122,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.1.0</version> <!-- org/apache/maven/plugins/maven-enforcer-plugin -->
+                <version>3.3.0</version> <!-- org/apache/maven/plugins/maven-enforcer-plugin -->
                 <executions>
                     <execution>
                         <id>enforce</id>
@@ -139,9 +139,9 @@
                                 <requireJavaVersion>
                                     <version>17</version>
                                 </requireJavaVersion>
-                                <!-- Required for maven-version-plugin -->
+                                <!-- Required by several builtin maven plugins -->
                                 <requireMavenVersion>
-                                    <version>3.0.4</version>
+                                    <version>3.2.5</version>
                                 </requireMavenVersion>
                             </rules>
                         </configuration>
@@ -156,7 +156,7 @@
             <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-surefire-plugin -->
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version> <!-- org/apache/maven/plugins/maven-surefire-plugin -->
+                <version>3.1.2</version> <!-- org/apache/maven/plugins/maven-surefire-plugin -->
                 <configuration>
                     <!-- Groups / Categories / Tags to exclude -->
                     <excludedGroups>integration</excludedGroups>
@@ -165,17 +165,6 @@
                     <!-- One thread per core -->
                     <perCoreThreadCount>true</perCoreThreadCount>
                     <threadCount>1</threadCount>
-                </configuration>
-            </plugin>
-            <!-- When we're built, don't include our logback.xml -->
-            <!-- https://maven.apache.org/plugins/maven-jar-plugin/ -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/logback.xml</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
         </plugins>
@@ -187,19 +176,19 @@
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-clean-plugin -->
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.2.0</version> <!-- org/apache/maven/plugins/maven-clean-plugin -->
+                    <version>3.3.1</version> <!-- org/apache/maven/plugins/maven-clean-plugin -->
                 </plugin>
                 <!-- default lifecycle, jar packaging:
                      see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-resources-plugin -->
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.3.0</version> <!-- org/apache/maven/plugins/maven-resources-plugin -->
+                    <version>3.3.1</version> <!-- org/apache/maven/plugins/maven-resources-plugin -->
                 </plugin>
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.10.1</version> <!-- org/apache/maven/plugins/maven-compiler-plugin -->
+                    <version>3.11.0</version> <!-- org/apache/maven/plugins/maven-compiler-plugin -->
                 </plugin>
                 <!-- Required for running unit tests from the cmd line -->
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-surefire-plugin -->
@@ -215,12 +204,12 @@
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-install-plugin -->
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>3.1.0</version> <!-- org/apache/maven/plugins/maven-install-plugin -->
+                    <version>3.1.1</version> <!-- org/apache/maven/plugins/maven-install-plugin -->
                 </plugin>
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-deploy-plugin -->
                 <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>3.0.0</version> <!-- org/apache/maven/plugins/maven-deploy-plugin -->
+                    <version>3.1.1</version> <!-- org/apache/maven/plugins/maven-deploy-plugin -->
                 </plugin>
                 <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-site-plugin -->
@@ -231,7 +220,7 @@
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-project-info-reports-plugin -->
                 <plugin>
                     <artifactId>maven-project-info-reports-plugin</artifactId>
-                    <version>3.4.1</version> <!-- org/apache/maven/plugins/maven-project-info-reports-plugin -->
+                    <version>3.4.5</version> <!-- org/apache/maven/plugins/maven-project-info-reports-plugin -->
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -262,7 +251,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version> <!-- org/apache/maven/plugins/maven-gpg-plugin -->
+                        <version>3.1.0</version> <!-- org/apache/maven/plugins/maven-gpg-plugin -->
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -279,7 +268,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>3.2.1</version> <!-- org/apache/maven/plugins/maven-source-plugin -->
+                        <version>3.3.0</version> <!-- org/apache/maven/plugins/maven-source-plugin -->
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -294,7 +283,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.4.1</version> <!-- org/apache/maven/plugins/maven-javadoc-plugin -->
+                        <version>3.5.0</version> <!-- org/apache/maven/plugins/maven-javadoc-plugin -->
                         <configuration>
                             <!-- https://stackoverflow.com/questions/39616344/how-to-disable-javadoc-warnings-in-maven-javadoc-plugin -->
                             <additionalOptions>-Xdoclint:none</additionalOptions>
